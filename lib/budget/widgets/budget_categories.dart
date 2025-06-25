@@ -126,7 +126,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         ...List.generate(categories.length, (i) {
           final cat = categories[i];
           return CategoryItem(

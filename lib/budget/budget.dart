@@ -1,5 +1,6 @@
-import 'package:exe201/budget/budget_categories.dart';
-import 'package:exe201/budget/recent_transaction.dart';
+import 'package:exe201/budget/widgets/balance_card.dart';
+import 'package:exe201/budget/widgets/budget_categories.dart';
+import 'package:exe201/budget/widgets/recent_transaction.dart';
 import 'package:exe201/extra/header.dart';
 import 'package:flutter/material.dart';
 
@@ -26,7 +27,7 @@ class BudgetTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      buildHeader(Colors.white),
+                      buildHeader(Colors.white, true),
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -51,41 +52,12 @@ class BudgetTab extends StatelessWidget {
                         }).toList(),
                       ),
 
-                      SizedBox(height: 20),
+                      SizedBox(height: 15),
                     ],
                   ),
                 ),
               ),
-              Container(
-                width: double.maxFinite,
-                margin: EdgeInsets.only(left: 20, right: 20, top: 20),
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Available balance',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '5.000.000 ₫',
-                      style: TextStyle(
-                        color: Colors.deepPurple,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              BalanceCard(),
               CategoriesSection(),
               RecentTransactionsSection()
             ],

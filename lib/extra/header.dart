@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-Widget buildHeader(Color color) {
+Widget buildHeader(Color color, bool greeting) {
   final now = DateTime.now();
   final dayOfWeek = DateFormat('EEEE').format(now);
   final formattedDate = formatWithOrdinal(now);
@@ -9,23 +9,28 @@ Widget buildHeader(Color color) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      if(greeting)
       Text(
         'Hi, Afsar',
         style: TextStyle(
-          fontSize: 28,
+          fontSize: 25,
           fontWeight: FontWeight.bold,
           color: color,
         ),
-      ),
-      SizedBox(height: 4),
+      )
+      else SizedBox(height: 10),
       Text(
         'Here is today\'s overview',
-        style: TextStyle(fontSize: 18, color: Colors.black54),
+        style: TextStyle(
+            fontSize: 21,
+            color: color,
+          fontWeight: FontWeight.bold
+        ),
       ),
       SizedBox(height: 2),
       Text(
         '$dayOfWeek, $formattedDate',
-        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+        style: TextStyle(fontSize: 14, color: color.withValues(alpha: 0.5)),
       ),
     ],
   );

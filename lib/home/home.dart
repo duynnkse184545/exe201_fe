@@ -1,7 +1,5 @@
 import 'package:exe201/extra/custom_field.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import '../Extra/custom_dialog.dart';
 import '../extra/header.dart';
 
@@ -33,7 +31,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              buildHeader(Colors.black87),
+              buildHeader(Colors.black87, true),
               SizedBox(height: 24),
 
               // Cards Section

@@ -15,7 +15,7 @@ class TvFApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
         fontFamily: 'Roboto',
       ),
-      home: LoginPage(),
+      home: BottomTab(),
       debugShowCheckedModeBanner: false,
     );
   }

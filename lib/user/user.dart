@@ -1,3 +1,5 @@
+import 'package:exe201/login/login_ui.dart';
+import 'package:exe201/service/api/dto/token_storage.dart';
 import 'package:flutter/material.dart';
 
 class UserTab extends StatelessWidget {
@@ -233,8 +235,14 @@ class UserTab extends StatelessWidget {
               child: Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
+              onPressed: () async {
+                await TokenStorage().clearToken();
+                if (!context.mounted) return;
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => LoginPage()),
+                );
+
                 // Handle logout logic here
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Logged out successfully')),
