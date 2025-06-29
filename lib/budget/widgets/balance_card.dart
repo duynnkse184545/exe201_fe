@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../Extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
@@ -12,9 +13,29 @@ class BalanceCard extends StatefulWidget {
 
 class _BalanceCardState extends State<BalanceCard> {
   bool _isPressed = false;
+  final PageController _controller = PageController();
+  int _currentPage = 0;
+
 
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> balanceItems = [
+      {
+        "title": "Available balance",
+        "amount": "5.000.000 ₫",
+        "action": ()  =>  _showBalanceDialog(context)
+      },
+      {
+        "title": "Income",
+        "amount": "8.000.000 ₫",
+        "action": () async => debugPrint("Tapped: income")
+      },
+      {
+        "title": "Expenses",
+        "amount": "3.000.000 ₫",
+        "action": () async => debugPrint("Tapped: expenses")
+      },
+    ];
     return Container(
       width: double.maxFinite,
       margin: EdgeInsets.only(left: 20, right: 20, top: 20),
@@ -30,7 +51,7 @@ class _BalanceCardState extends State<BalanceCard> {
             });
 
             // Wait for the dialog to complete (when user dismisses it)
-            await _showBalanceDialog(context);
+            balanceItems[_currentPage]['action']();
 
             // Only reset _isPressed after dialog is actually closed
             if (mounted) {
@@ -46,19 +67,50 @@ class _BalanceCardState extends State<BalanceCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'Available balance',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
+                  SizedBox(
+                    height: 70,
+                    child: PageView.builder(
+                      controller: _controller,
+                      itemCount: balanceItems.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPage = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final item = balanceItems[index];
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              item['title']!,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Text(
+                              item['amount']!,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
-                  Text(
-                    '5.000.000 ₫',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
+                  SmoothPageIndicator(
+                    controller: _controller,
+                    count: balanceItems.length,
+                    effect: WormEffect(
+                      activeDotColor: Colors.white,
+                      dotColor: Colors.white.withValues(alpha: 0.5),
+                      dotHeight: 5,
+                      dotWidth: 5,
+                      spacing: 5,
                     ),
                   ),
                 ],

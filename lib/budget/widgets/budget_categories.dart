@@ -20,77 +20,90 @@ class CategoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: isExpanded
+            ? [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 6,
+            offset: Offset(0, 4),
+          ),
+        ]
+            : [],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$index',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$index',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontSize: 16),
+                  Text(
+                    amount,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                Text(
-                  amount,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
 
-        // Expanded content
-        if (isExpanded)
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.deepPurple.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+          if (isExpanded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(12),
+                ),
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  // Your action
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff7583ca),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text("Do Something"),
+              ),
             ),
-            child: ElevatedButton(
-              onPressed: () {
-                // Your action
-              },
-              child: const Text("Do Something"),
-            ),
-          ),
-      ],
+        ],
+      ),
     );
+
   }
 }
 
