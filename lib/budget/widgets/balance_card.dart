@@ -16,29 +16,38 @@ class _BalanceCardState extends State<BalanceCard> {
   final PageController _controller = PageController();
   int _currentPage = 0;
 
-
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> balanceItems = [
       {
         "title": "Available balance",
         "amount": "5.000.000 ₫",
-        "action": ()  =>  _showBalanceDialog(context)
+        "action": () => _showBalanceDialog(context),
       },
       {
         "title": "Income",
         "amount": "8.000.000 ₫",
-        "action": () async => debugPrint("Tapped: income")
+        "action": () async => debugPrint("Tapped: income"),
       },
       {
         "title": "Expenses",
         "amount": "3.000.000 ₫",
-        "action": () async => debugPrint("Tapped: expenses")
+        "action": () async => debugPrint("Tapped: expenses"),
       },
     ];
     return Container(
       width: double.maxFinite,
       margin: EdgeInsets.only(left: 20, right: 20, top: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Material(
         color: _getMaterialColor(),
         borderRadius: BorderRadius.circular(16),
@@ -145,18 +154,18 @@ class _BalanceCardState extends State<BalanceCard> {
       content: Column(
         children: [
           buildFormField(
-              label: 'Name',
-              controller: balanceController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true)
+            label: 'Name',
+            controller: balanceController,
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
           ),
         ],
       ),
       onActionPressed: () {
         final balanceText = balanceController.text.trim();
         if (balanceText.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Please fill in all fields'))
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Please fill in all fields')));
           return;
         }
         final amount = double.tryParse(balanceText);

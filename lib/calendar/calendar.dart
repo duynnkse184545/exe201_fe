@@ -104,13 +104,10 @@ class _CalendarTabState extends State<CalendarTab> {
         labelText: 'Date (DD/MM/YYYY)',
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
         filled: true,
-        fillColor: Colors.grey.withOpacity(0.1),
+        fillColor: Colors.grey.withValues(alpha: 0.1),
       ),
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -148,35 +145,82 @@ class _CalendarTabState extends State<CalendarTab> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = DateTime(
-                        _focusedDay.year,
-                        _focusedDay.month - 1,
-                      );
-                    });
-                  },
-                  icon: const Icon(Icons.chevron_left, color: Colors.grey),
-                ),
-                Text(
-                  DateFormat('MMMM').format(_focusedDay),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                Padding(
+                  padding: EdgeInsets.only(left: 20),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(4),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _focusedDay = DateTime(
+                          _focusedDay.year,
+                          _focusedDay.month - 1,
+                        );
+                      });
+                    },
+                    child: const Icon(
+                      Icons.chevron_left,
+                      color: Colors.grey,
+                      size: 25,
+                    ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _focusedDay = DateTime(
-                        _focusedDay.year,
-                        _focusedDay.month + 1,
-                      );
-                    });
-                  },
-                  icon: const Icon(Icons.chevron_right, color: Colors.grey),
+
+                Column(
+                    children: [
+                      Text(
+                        DateFormat('MMMM').format(_focusedDay),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+
+                      Text(
+                        DateFormat('yyyy').format(_focusedDay),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ]
+                ),
+
+                Padding(
+                  padding: EdgeInsets.only(right: 20),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.all(4),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      side: const BorderSide(color: Colors.grey),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _focusedDay = DateTime(
+                          _focusedDay.year,
+                          _focusedDay.month - 1,
+                        );
+                      });
+                    },
+                    child: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 25,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -207,11 +251,11 @@ class _CalendarTabState extends State<CalendarTab> {
                   fontWeight: FontWeight.w500,
                 ),
                 selectedDecoration: const BoxDecoration(
-                  color: Color(0xFF6366F1),
+                  color: Color(0xFFFF6B6B),
                   shape: BoxShape.circle,
                 ),
                 todayDecoration: const BoxDecoration(
-                  color: Color(0xFFFF6B6B),
+                  color: Color(0xFF6366F1),
                   shape: BoxShape.circle,
                 ),
                 markerDecoration: const BoxDecoration(
@@ -250,7 +294,7 @@ class _CalendarTabState extends State<CalendarTab> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     spreadRadius: 1,
                     blurRadius: 8,
                     offset: const Offset(0, 2),
@@ -330,10 +374,10 @@ class _CalendarTabState extends State<CalendarTab> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDeadlineDialog,
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: const Color(0xff7583ca),
+        shape: CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
-
