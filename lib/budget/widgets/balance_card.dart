@@ -1,7 +1,6 @@
+import 'package:exe201/extra/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-
-import '../../Extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
 
 class BalanceCard extends StatefulWidget {
@@ -11,10 +10,11 @@ class BalanceCard extends StatefulWidget {
   State<BalanceCard> createState() => _BalanceCardState();
 }
 
-class _BalanceCardState extends State<BalanceCard> {
-  bool _isPressed = false;
+class _BalanceCardState extends State<BalanceCard> with PressedStateMixin {
   final PageController _controller = PageController();
   int _currentPage = 0;
+  double _displayedBalance = 5000000;
+  double _targetBalance = 5000000;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class _BalanceCardState extends State<BalanceCard> {
       {
         "title": "Available balance",
         "amount": "5.000.000 ₫",
-        "action": () => _showBalanceDialog(context),
+        "action": ()  =>  _showBalanceDialog(context),
       },
       {
         "title": "Income",
@@ -49,26 +49,12 @@ class _BalanceCardState extends State<BalanceCard> {
         ],
       ),
       child: Material(
-        color: _getMaterialColor(),
+        color: getPressedStateColor(isPressed),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           splashColor: Colors.black.withValues(alpha: 0.5),
-          onTap: () async {
-            setState(() {
-              _isPressed = true;
-            });
-
-            // Wait for the dialog to complete (when user dismisses it)
-            balanceItems[_currentPage]['action']();
-
-            // Only reset _isPressed after dialog is actually closed
-            if (mounted) {
-              setState(() {
-                _isPressed = false;
-              });
-            }
-          },
+          onTap: () => executeWithPressedState(balanceItems[_currentPage]['action']),
           child: SizedBox(
             width: double.infinity,
             child: Padding(
@@ -98,9 +84,30 @@ class _BalanceCardState extends State<BalanceCard> {
                                 fontSize: 18,
                               ),
                             ),
-                            Text(
-                              item['amount']!,
-                              style: TextStyle(
+                            _currentPage == 0
+                                ? TweenAnimationBuilder<double>(
+                              duration: const Duration(milliseconds: 800),
+                              tween: Tween<double>(
+                                begin: _displayedBalance,
+                                end: _targetBalance,
+                              ),
+                              onEnd: () {
+                                _displayedBalance = _targetBalance;
+                              },
+                              builder: (context, value, child) {
+                                return Text(
+                                  _formatCurrency(value),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                );
+                              },
+                            )
+                                : Text(
+                              item['amount'],
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.w900,
@@ -131,15 +138,11 @@ class _BalanceCardState extends State<BalanceCard> {
     );
   }
 
-  Color _getMaterialColor() {
-    final baseColor = Color(0xff7583ca);
-    if (_isPressed) {
-      // Use HSLColor to darken slightly
-      final hsl = HSLColor.fromColor(baseColor);
-      final darker = hsl.withLightness((hsl.lightness - 0.3).clamp(0.0, 1.0));
-      return darker.toColor();
-    }
-    return baseColor;
+  String _formatCurrency(double value) {
+    return '${value
+        .toStringAsFixed(0)
+        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (match) => '${match[1]}.')} ₫';
   }
 
   Future<Map<String, dynamic>?> _showBalanceDialog(BuildContext context) async {
@@ -160,7 +163,7 @@ class _BalanceCardState extends State<BalanceCard> {
           ),
         ],
       ),
-      onActionPressed: () {
+      onActionPressed: () async{
         final balanceText = balanceController.text.trim();
         if (balanceText.isEmpty) {
           ScaffoldMessenger.of(
@@ -169,12 +172,17 @@ class _BalanceCardState extends State<BalanceCard> {
           return;
         }
         final amount = double.tryParse(balanceText);
+        debugPrint(amount.toString());
         if (amount == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Please enter a valid amount')),
           );
           return;
         }
+        setState(() {
+          _displayedBalance = _targetBalance;
+          _targetBalance = amount;
+        });
         Navigator.of(context).pop({'amount': amount});
       },
     );

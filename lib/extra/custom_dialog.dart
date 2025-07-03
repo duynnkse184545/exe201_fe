@@ -1,12 +1,39 @@
 import 'package:flutter/material.dart';
 
+Color getPressedStateColor(bool isPressed) {
+  final baseColor = Color(0xff7583ca);
+  if (isPressed) {
+    // Use HSLColor to darken slightly
+    final hsl = HSLColor.fromColor(baseColor);
+    final darker = hsl.withLightness((hsl.lightness - 0.3).clamp(0.0, 1.0));
+    return darker.toColor();
+  }
+  return baseColor;
+}
+
+mixin PressedStateMixin<T extends StatefulWidget> on State<T> {
+  bool _isPressed = false;
+  bool get isPressed => _isPressed;
+
+  Future<void> executeWithPressedState(Future<void> Function() action) async {
+    setState(() => _isPressed = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) {
+        setState(() => _isPressed = false);
+      }
+    }
+  }
+}
+
 Future<T?> showCustomBottomSheet<T>({
   required BuildContext context,
   required String title,
   required Widget content,
   required String actionText,
   required Color actionColor,
-  VoidCallback? onActionPressed,
+  Future<void> Function()? onActionPressed,
   bool isDismissible = true,
 }) {
   return showGeneralDialog<T>(

@@ -40,7 +40,7 @@ class _CalendarTabState extends State<CalendarTab> {
           buildFormField(label: 'Estimated Time', controller: timeController),
         ],
       ),
-      onActionPressed: () {
+      onActionPressed: () async{
         Navigator.of(context).pop();
       },
     );
@@ -211,7 +211,7 @@ class _CalendarTabState extends State<CalendarTab> {
                       setState(() {
                         _focusedDay = DateTime(
                           _focusedDay.year,
-                          _focusedDay.month - 1,
+                          _focusedDay.month + 1,
                         );
                       });
                     },

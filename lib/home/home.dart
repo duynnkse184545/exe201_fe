@@ -289,7 +289,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
           ),
         ],
       ),
-      onActionPressed: () {
+      onActionPressed: () async{
         final name = nameController.text.trim();
         final amountText = amountController.text.trim();
         if (name.isEmpty || amountText.isEmpty) {
@@ -334,7 +334,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
           ),
         ],
       ),
-      onActionPressed: () {
+      onActionPressed: () async{
         // Add logic for starting the timer if needed
         Navigator.of(context).pop();
       },
