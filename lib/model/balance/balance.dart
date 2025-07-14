@@ -7,7 +7,7 @@ part 'balance.freezed.dart';
 part 'balance.g.dart';
 
 @freezed
-class Balance with _$Balance {
+abstract class Balance with _$Balance {
   const factory Balance({
     required String userId,
     required double availableBalance,

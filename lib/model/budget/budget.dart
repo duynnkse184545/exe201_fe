@@ -5,7 +5,7 @@ part 'budget.freezed.dart';
 part 'budget.g.dart';
 
 @freezed
-class Budget with _$Budget {
+abstract class Budget with _$Budget {
   const factory Budget({
     required String budgetId,
     required String categoryId,
@@ -14,7 +14,11 @@ class Budget with _$Budget {
     required DateTime startDate,
     required DateTime endDate,
     required String userId,
-    @Default(0.0) double spentAmount,
+    @Default(0.0) double spentAmount, // Calculated by backend
+    @Default(0.0) double remainingAmount, // Calculated by backend
+    @Default(0.0) double spentPercentage, // Calculated by backend
+    @Default(false) bool isOverBudget, // Calculated by backend
+    @Default(false) bool isLocked, // User can lock budget amount for next month
     @Default([]) List<Expense> recentExpenses,
     String? categoryName,
   }) = _Budget;
@@ -23,8 +27,11 @@ class Budget with _$Budget {
       _$BudgetFromJson(json);
 }
 
+// Extensions for backward compatibility (values now come from backend)
 extension BudgetExtensions on Budget {
-  double get remainingAmount => budgetAmount - spentAmount;
-  double get spentPercentage => budgetAmount > 0 ? (spentAmount / budgetAmount) * 100 : 0;
-  bool get isOverBudget => spentAmount > budgetAmount;
+  // Amount unused (will be added to next month's balance, not budget)
+  double get unusedAmount => remainingAmount > 0 ? remainingAmount : 0;
+  
+  // Check if budget period has ended
+  bool get isPeriodEnded => DateTime.now().isAfter(endDate);
 }

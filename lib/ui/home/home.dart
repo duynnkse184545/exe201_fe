@@ -1,6 +1,6 @@
-import 'package:exe201/extra/custom_field.dart';
+import 'package:exe201/ui/extra/custom_field.dart';
 import 'package:flutter/material.dart';
-import '../Extra/custom_dialog.dart';
+import '../extra/custom_dialog.dart';
 import '../extra/header.dart';
 
 class HomeTab extends StatelessWidget {

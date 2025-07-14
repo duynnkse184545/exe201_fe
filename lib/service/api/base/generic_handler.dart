@@ -12,9 +12,11 @@ class ApiService<T, ID> {
   Future<List<T>> getAll() async {
     try {
       final response = await _dio.get(endpoint);
-      return (response.data as List).map((e) => fromJson(e)).toList();
+      return (response.data).map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw Exception('GET failed: ${_formatError(e)}');
+    } catch (e) {
+      throw Exception('Failed to parse response: $e');
     }
   }
 

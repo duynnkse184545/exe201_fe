@@ -6,7 +6,7 @@ class ExpenseCategoryService {
 
   ExpenseCategoryService() {
     _apiService = ApiService<ExpenseCategory, String>(
-      endpoint: '/api/expense-categories',
+      endpoint: '/api/ExpensesCategory',
       fromJson: (json) => ExpenseCategory.fromJson(json),
     );
   }

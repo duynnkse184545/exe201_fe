@@ -4,7 +4,7 @@ part 'budget_request.freezed.dart';
 part 'budget_request.g.dart';
 
 @freezed
-class BudgetRequest with _$BudgetRequest {
+abstract class BudgetRequest with _$BudgetRequest {
   const factory BudgetRequest({
     required String categoryId,
     required String accountId,

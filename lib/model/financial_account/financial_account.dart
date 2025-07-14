@@ -4,7 +4,7 @@ part 'financial_account.freezed.dart';
 part 'financial_account.g.dart';
 
 @freezed
-class FinancialAccount with _$FinancialAccount {
+abstract class FinancialAccount with _$FinancialAccount {
   const factory FinancialAccount({
     required String accountId,
     required String accountName,

@@ -1,7 +1,7 @@
-import 'package:exe201/budget/budget.dart';
-import 'package:exe201/calendar/calendar.dart';
-import 'package:exe201/community/community.dart';
-import 'package:exe201/user/user.dart';
+import 'package:exe201/ui/budget/budget.dart';
+import 'package:exe201/ui/calendar/calendar.dart';
+import 'package:exe201/ui/community/community.dart';
+import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../home/home.dart';

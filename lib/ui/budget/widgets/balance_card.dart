@@ -1,4 +1,4 @@
-import 'package:exe201/extra/custom_dialog.dart';
+import 'package:exe201/ui/extra/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../extra/custom_field.dart';
