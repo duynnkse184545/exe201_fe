@@ -7,13 +7,13 @@ class ApiClient {
   factory ApiClient() => _instance;
 
   ApiClient._internal() {
-    dio = Dio(BaseOptions(
-      baseUrl: 'http://10.0.2.2:5134',
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    ));
+    dio = Dio(
+      BaseOptions(
+        baseUrl: 'https://16fa13c4357e.ngrok-free.app',
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {'Content-Type': 'application/json'},
+      ),
+    );
   }
 }

@@ -1,11 +1,11 @@
-import 'package:exe201/Extra/nav_bar.dart';
+import 'package:exe201/ui/extra/nav_bar.dart';
 import 'package:exe201/service/api/auth_service.dart';
 import 'package:flutter/material.dart';
 
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
-import '../service/api/dto/auth_request.dart';
-import '../service/api/dto/token_storage.dart';
+import '../../service/api/dto/auth_request.dart';
+import '../../service/storage/token_storage.dart';
 import 'password_reset.dart';
 import 'sign_up.dart';
 

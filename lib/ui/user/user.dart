@@ -1,5 +1,5 @@
-import 'package:exe201/login/login_ui.dart';
-import 'package:exe201/service/api/dto/token_storage.dart';
+import 'package:exe201/ui/login/login_ui.dart';
+import 'package:exe201/service/storage/token_storage.dart';
 import 'package:flutter/material.dart';
 
 class UserTab extends StatelessWidget {

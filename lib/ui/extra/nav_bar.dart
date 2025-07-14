@@ -1,8 +1,9 @@
-import 'package:exe201/budget/budget.dart';
-import 'package:exe201/calendar/calendar.dart';
-import 'package:exe201/community/community.dart';
-import 'package:exe201/user/user.dart';
+import 'package:exe201/ui/budget/budget.dart';
+import 'package:exe201/ui/calendar/calendar.dart';
+import 'package:exe201/ui/community/community.dart';
+import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../home/home.dart';
 
 class BottomTab extends StatefulWidget {
@@ -15,7 +16,6 @@ class BottomTab extends StatefulWidget {
 class _BottomTabState extends State<BottomTab> {
   int _currentIndex = 0;
   late final PageController _pageController;
-
 
   final List<Widget> _tabs = [
     const HomeTab(),
@@ -92,8 +92,8 @@ class _BottomTabState extends State<BottomTab> {
     return GestureDetector(
       onTap: () => _goToPage(index),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300), // smoother than 1000ms
-        curve: Curves.easeInOutCubic, // more natural curve
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOutCubic,
         padding: isSelected
             ? const EdgeInsets.symmetric(horizontal: 20, vertical: 12)
             : const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -103,39 +103,35 @@ class _BottomTabState extends State<BottomTab> {
           boxShadow: isSelected
               ? [
             BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-              spreadRadius: 2,
-            ),
-            BoxShadow(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
               blurRadius: 8,
-              offset: const Offset(-2, -2),
+              offset: const Offset(0, 2),
               spreadRadius: 1,
             ),
           ]
               : [],
         ),
         child: AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      transitionBuilder: (child, animation) {
-        return ScaleTransition(scale: animation, child: child);
-      },
-      child: Icon(
-        icon,
-        key: ValueKey<bool>(isSelected),
-        color: isSelected ? Colors.white : Colors.grey[400],
-        size: 24,
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) {
+            return ScaleTransition(scale: animation, child: child);
+          },
+          child: Icon(
+            icon,
+            key: ValueKey<bool>(isSelected),
+            color: isSelected ? Colors.white : Colors.grey[400],
+            size: 24,
+          ),
+        ),
       ),
-    ),
-    ),
     );
-
   }
 
   void _goToPage(int targetIndex) {
     if (targetIndex == _currentIndex) return;
+
+    // Add haptic feedback for better UX
+    HapticFeedback.lightImpact();
 
     final distance = (targetIndex - _currentIndex).abs();
 

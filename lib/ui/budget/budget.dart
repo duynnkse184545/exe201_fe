@@ -1,7 +1,7 @@
-import 'package:exe201/budget/widgets/balance_card.dart';
-import 'package:exe201/budget/widgets/budget_categories.dart';
-import 'package:exe201/budget/widgets/month_slider.dart';
-import 'package:exe201/budget/widgets/recent_transaction.dart';
+import 'package:exe201/ui/budget/widgets/balance_card.dart';
+import 'package:exe201/ui/budget/widgets/budget_categories.dart';
+import 'package:exe201/ui/budget/widgets/month_slider.dart';
+import 'package:exe201/ui/budget/widgets/recent_transaction.dart';
 import 'package:flutter/material.dart';
 
 

@@ -1,9 +1,9 @@
 import 'package:exe201/service/api/base/generic_handler.dart';
 import 'package:flutter/material.dart';
 
+import '../../model/user.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
-import '../model/user.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
