@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'api_client.dart';
 
 class ApiService<T, ID> {
@@ -12,10 +13,14 @@ class ApiService<T, ID> {
   Future<List<T>> getAll() async {
     try {
       final response = await _dio.get(endpoint);
-      return (response.data).map((e) => fromJson(e as Map<String, dynamic>)).toList();
+      final Map<String, dynamic> responseMap = response.data as Map<String, dynamic>;
+      final List<dynamic> dataList = responseMap['data'];
+
+      return dataList.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw Exception('GET failed: ${_formatError(e)}');
     } catch (e) {
+      debugPrint(e.toString());
       throw Exception('Failed to parse response: $e');
     }
   }
@@ -23,21 +28,38 @@ class ApiService<T, ID> {
   Future<T> getById(ID id) async {
     try {
       final response = await _dio.get('$endpoint/$id');
-      return fromJson(response.data);
+      final Map<String, dynamic> responseMap = response.data as Map<String, dynamic>;
+      debugPrint(responseMap.toString());
+      if (responseMap['isSuccess'] == true) {
+        return fromJson(responseMap['data'] as Map<String, dynamic>);
+      } else {
+        throw Exception('API Error: ${responseMap['message'] ?? 'Unknown error'}');
+      }
     } on DioException catch (e) {
       throw Exception('GET by ID failed: ${_formatError(e)}');
     }
   }
 
-  Future<T> create(Map<String, dynamic> data) async {
+  // Create - automatically uses toJson() if available
+  Future<T> create(dynamic data) async {
     try {
-      // Add debug logging
-      print('Creating with data: $data');
-      print('Endpoint: $endpoint');
-
-      final response = await _dio.post(endpoint, data: data);
-      print('Response: ${response.data}');
-      return fromJson(response.data);
+      Map<String, dynamic> jsonData;
+      
+      if (data is Map<String, dynamic>) {
+        jsonData = data;
+      } else {
+        // Try to call toJson() method if available
+        try {
+          jsonData = data.toJson() as Map<String, dynamic>;
+        } catch (e) {
+          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
+        }
+      }
+      
+      debugPrint(jsonData.toString());
+      final response = await _dio.post(endpoint, data: jsonData);
+      print('Response: ${response.data['data']}');
+      return fromJson(response.data['data']);
     } on DioException catch (e) {
       // Enhanced error logging for debugging
       print('POST Error Details:');
@@ -49,10 +71,47 @@ class ApiService<T, ID> {
     }
   }
 
-  Future<T> update(ID id, Map<String, dynamic> data) async {
+  // Update - automatically uses toJson() if available
+  Future<T> update(dynamic data) async {
     try {
-      final response = await _dio.put('$endpoint/$id', data: data);
-      return fromJson(response.data);
+      Map<String, dynamic> jsonData;
+      
+      if (data is Map<String, dynamic>) {
+        jsonData = data;
+      } else {
+        // Try to call toJson() method if available
+        try {
+          jsonData = data.toJson() as Map<String, dynamic>;
+        } catch (e) {
+          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
+        }
+      }
+      
+      final response = await _dio.put(endpoint, data: jsonData);
+      return fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw Exception('PUT failed: ${_formatError(e)}');
+    }
+  }
+
+  // Update by ID - automatically uses toJson() if available
+  Future<T> updateById(ID id, dynamic data) async {
+    try {
+      Map<String, dynamic> jsonData;
+      
+      if (data is Map<String, dynamic>) {
+        jsonData = data;
+      } else {
+        // Try to call toJson() method if available
+        try {
+          jsonData = data.toJson() as Map<String, dynamic>;
+        } catch (e) {
+          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
+        }
+      }
+      
+      final response = await _dio.put('$endpoint/$id', data: jsonData);
+      return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');
     }

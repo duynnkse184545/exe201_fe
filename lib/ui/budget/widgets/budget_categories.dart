@@ -70,7 +70,7 @@ class CategoryItem extends StatelessWidget {
                         onPressed: () => onActionPressed(),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 80),
-                          backgroundColor: getPressedStateColor(isPressed),
+                          backgroundColor: getPressedStateColor(color, isPressed),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

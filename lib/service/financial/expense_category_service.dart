@@ -1,4 +1,5 @@
 import '../api/base/generic_handler.dart';
+import '../api/base/id_generator.dart';
 import '../../model/models.dart';
 
 class ExpenseCategoryService {
@@ -36,7 +37,7 @@ class ExpenseCategoryService {
   }) async {
     try {
       final categoryData = {
-        'exCId': _generateId(),
+        'exCId': IdGenerator.generate(),
         'categoryName': categoryName,
         'description': description,
       };
@@ -48,9 +49,9 @@ class ExpenseCategoryService {
   }
 
   // Update category
-  Future<ExpenseCategory> updateCategory(String categoryId, Map<String, dynamic> updates) async {
+  Future<ExpenseCategory> updateCategory(Map<String, dynamic> updates) async {
     try {
-      return await _apiService.update(categoryId, updates);
+      return await _apiService.update(updates);
     } catch (e) {
       throw Exception('Failed to update category: $e');
     }
@@ -91,7 +92,4 @@ class ExpenseCategoryService {
     }
   }
 
-  String _generateId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
 }

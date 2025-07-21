@@ -19,7 +19,6 @@ abstract class Budget with _$Budget {
     @Default(0.0) double spentPercentage, // Calculated by backend
     @Default(false) bool isOverBudget, // Calculated by backend
     @Default(false) bool isLocked, // User can lock budget amount for next month
-    @Default([]) List<Expense> recentExpenses,
     String? categoryName,
   }) = _Budget;
 
@@ -27,11 +26,26 @@ abstract class Budget with _$Budget {
       _$BudgetFromJson(json);
 }
 
-// Extensions for backward compatibility (values now come from backend)
+// Request model for creating budgets
+@freezed
+abstract class BudgetRequest with _$BudgetRequest {
+  const factory BudgetRequest({
+    required String categoryId,
+    required String accountId,
+    required double budgetAmount,
+    required String userId,
+    @Default(false) bool isLocked,
+  }) = _BudgetRequest;
+
+  factory BudgetRequest.fromJson(Map<String, dynamic> json) =>
+      _$BudgetRequestFromJson(json);
+}
+
+// Extensions for UI logic only (calculations now come from backend)
 extension BudgetExtensions on Budget {
-  // Amount unused (will be added to next month's balance, not budget)
-  double get unusedAmount => remainingAmount > 0 ? remainingAmount : 0;
-  
-  // Check if budget period has ended
+  // Check if budget period has ended (kept as this is UI logic, not calculation)
   bool get isPeriodEnded => DateTime.now().isAfter(endDate);
+  
+  // Note: unusedAmount is now just remainingAmount from backend
+  // spentPercentage, isOverBudget are provided directly by backend
 }
