@@ -7,8 +7,13 @@ class ApiService<T, ID> {
 
   final String endpoint;
   final T Function(Map<String, dynamic>) fromJson;
+  final Map<String, dynamic> Function(dynamic) toJson;
 
-  ApiService({required this.endpoint, required this.fromJson});
+  ApiService({
+    required this.endpoint, 
+    required this.fromJson,
+    required this.toJson,
+  });
 
   Future<List<T>> getAll() async {
     try {
@@ -40,22 +45,9 @@ class ApiService<T, ID> {
     }
   }
 
-  // Create - automatically uses toJson() if available
-  Future<T> create(dynamic data) async {
+  Future<T> create<TRequest>(TRequest data) async {
     try {
-      Map<String, dynamic> jsonData;
-      
-      if (data is Map<String, dynamic>) {
-        jsonData = data;
-      } else {
-        // Try to call toJson() method if available
-        try {
-          jsonData = data.toJson() as Map<String, dynamic>;
-        } catch (e) {
-          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
-        }
-      }
-      
+      final jsonData = toJson(data);
       debugPrint(jsonData.toString());
       final response = await _dio.post(endpoint, data: jsonData);
       print('Response: ${response.data['data']}');
@@ -71,22 +63,9 @@ class ApiService<T, ID> {
     }
   }
 
-  // Update - automatically uses toJson() if available
-  Future<T> update(dynamic data) async {
+  Future<T> update<TRequest>(TRequest data) async {
     try {
-      Map<String, dynamic> jsonData;
-      
-      if (data is Map<String, dynamic>) {
-        jsonData = data;
-      } else {
-        // Try to call toJson() method if available
-        try {
-          jsonData = data.toJson() as Map<String, dynamic>;
-        } catch (e) {
-          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
-        }
-      }
-      
+      final jsonData = toJson(data);
       final response = await _dio.put(endpoint, data: jsonData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -94,22 +73,9 @@ class ApiService<T, ID> {
     }
   }
 
-  // Update by ID - automatically uses toJson() if available
-  Future<T> updateById(ID id, dynamic data) async {
+  Future<T> updateById<TRequest>(ID id, TRequest data) async {
     try {
-      Map<String, dynamic> jsonData;
-      
-      if (data is Map<String, dynamic>) {
-        jsonData = data;
-      } else {
-        // Try to call toJson() method if available
-        try {
-          jsonData = data.toJson() as Map<String, dynamic>;
-        } catch (e) {
-          throw Exception('Data must be Map<String, dynamic> or have toJson() method');
-        }
-      }
-      
+      final jsonData = toJson(data);
       final response = await _dio.put('$endpoint/$id', data: jsonData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {

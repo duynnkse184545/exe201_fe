@@ -8,13 +8,14 @@ class UserService {
     _apiService = ApiService<User, String>(
       endpoint: '/api/User',
       fromJson: (json) => User.fromJson(json),
+      toJson: (user) => user.toJson(),
     );
   }
 
   // Create new user
   Future<User> createUser(User user) async {
     try {
-      return await _apiService.create(user.toJson());
+      return await _apiService.create(user);
     } catch (e) {
       throw Exception('Failed to create user: $e');
     }
@@ -32,7 +33,7 @@ class UserService {
   // Update user
   Future<User> updateUser(String userId, Map<String, dynamic> updates) async {
     try {
-      return await _apiService.updateById(userId, updates);
+      return await _apiService.updateById<Map<String, dynamic>>(userId, updates);
     } catch (e) {
       throw Exception('Failed to update user: $e');
     }

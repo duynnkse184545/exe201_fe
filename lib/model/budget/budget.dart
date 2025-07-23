@@ -26,14 +26,15 @@ abstract class Budget with _$Budget {
       _$BudgetFromJson(json);
 }
 
-// Request model for creating budgets
+// Request model for creating and updating budgets
 @freezed
 abstract class BudgetRequest with _$BudgetRequest {
   const factory BudgetRequest({
-    required String categoryId,
-    required String accountId,
+    String? budgetId,
+    required String? categoryId,
+    required String? accountId,
     required double budgetAmount,
-    required String userId,
+    required String? userId,
     @Default(false) bool isLocked,
   }) = _BudgetRequest;
 

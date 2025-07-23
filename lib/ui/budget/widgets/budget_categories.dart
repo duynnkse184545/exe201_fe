@@ -194,13 +194,13 @@ class _CategoriesSectionState extends State<CategoriesSection> {
       children: [
         const SizedBox(height: 15),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             SizedBox(width: 20),
             const Text(
               'Categories',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(width: 210),
             FloatingActionButton.small(
               onPressed: () {},
               backgroundColor: const Color(0xff7583ca),

@@ -9,6 +9,7 @@ class ExpenseCategoryService {
     _apiService = ApiService<ExpenseCategory, String>(
       endpoint: '/api/ExpensesCategory',
       fromJson: (json) => ExpenseCategory.fromJson(json),
+      toJson: (category) => category.toJson(),
     );
   }
 
@@ -51,7 +52,7 @@ class ExpenseCategoryService {
   // Update category
   Future<ExpenseCategory> updateCategory(Map<String, dynamic> updates) async {
     try {
-      return await _apiService.update(updates);
+      return await _apiService.update<Map<String, dynamic>>(updates);
     } catch (e) {
       throw Exception('Failed to update category: $e');
     }

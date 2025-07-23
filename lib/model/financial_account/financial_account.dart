@@ -18,10 +18,11 @@ abstract class FinancialAccount with _$FinancialAccount {
       _$FinancialAccountFromJson(json);
 }
 
-// Request model for creating financial accounts
+// Request model for creating and updating financial accounts
 @freezed
 abstract class FinancialAccountRequest with _$FinancialAccountRequest {
   const factory FinancialAccountRequest({
+    String? accountId, // null for create, required for update
     required String accountName,
     required double balance,
     @Default('VND') String currencyCode,

@@ -11,10 +11,12 @@ class BalanceService {
     _balanceApiService = ApiService<Balance, String>(
       endpoint: '/api/enhanced-financial-dashboard',
       fromJson: (json) => Balance.fromJson(json['data'] ?? json),
+      toJson: (balance) => balance.toJson(),
     );
     _rawApiService = ApiService<Map<String, dynamic>, String>(
       endpoint: '/api/enhanced-financial-dashboard',
       fromJson: (json) => json,
+      toJson: (data) => data,
     );
   }
 

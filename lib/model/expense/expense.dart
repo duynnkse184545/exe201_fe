@@ -20,10 +20,11 @@ abstract class Expense with _$Expense {
       _$ExpenseFromJson(json);
 }
 
-// Request model for creating expenses
+// Request model for creating and updating expenses
 @freezed
 abstract class ExpenseRequest with _$ExpenseRequest {
   const factory ExpenseRequest({
+    String? expensesId, // null for create, required for update
     required double amount,
     String? description,
     required String exCid,
