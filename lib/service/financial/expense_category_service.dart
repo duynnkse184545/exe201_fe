@@ -1,33 +1,31 @@
 import '../api/base/generic_handler.dart';
+import '../api/base/id_generator.dart';
 import '../../model/models.dart';
 
-class ExpenseCategoryService {
-  late final ApiService<ExpenseCategory, String> _apiService;
+class ExpenseCategoryService extends ApiService<ExpenseCategory, String> {
+  ExpenseCategoryService() : super(endpoint: '/api/ExpensesCategory');
 
-  ExpenseCategoryService() {
-    _apiService = ApiService<ExpenseCategory, String>(
-      endpoint: '/api/ExpensesCategory',
-      fromJson: (json) => ExpenseCategory.fromJson(json),
-    );
+  @override
+  ExpenseCategory fromJson(Map<String, dynamic> json) => ExpenseCategory.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson(dynamic data) {
+    if (data is ExpenseCategory) return data.toJson();
+    if (data is Map<String, dynamic>) return data;
+    throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
-  // Get all expense categories
+  // Get all expense categories (inherited method with domain-specific wrapper)
   Future<List<ExpenseCategory>> getAllCategories() async {
     try {
-      return await _apiService.getAll();
+      return await getAll();
     } catch (e) {
       throw Exception('Failed to get expense categories: $e');
     }
   }
 
-  // Get category by ID
-  Future<ExpenseCategory> getCategoryById(String categoryId) async {
-    try {
-      return await _apiService.getById(categoryId);
-    } catch (e) {
-      throw Exception('Failed to get category: $e');
-    }
-  }
+  // Get category by ID (inherited method)
+  // Future<ExpenseCategory> getById(String categoryId) is inherited
 
   // Create new category
   Future<ExpenseCategory> createCategory({
@@ -36,34 +34,28 @@ class ExpenseCategoryService {
   }) async {
     try {
       final categoryData = {
-        'exCId': _generateId(),
+        'exCId': IdGenerator.generate(),
         'categoryName': categoryName,
         'description': description,
       };
       
-      return await _apiService.create(categoryData);
+      return await create(categoryData);
     } catch (e) {
       throw Exception('Failed to create category: $e');
     }
   }
 
-  // Update category
-  Future<ExpenseCategory> updateCategory(String categoryId, Map<String, dynamic> updates) async {
+  // Update category (inherited method with domain-specific wrapper)
+  Future<ExpenseCategory> updateCategory(Map<String, dynamic> updates) async {
     try {
-      return await _apiService.update(categoryId, updates);
+      return await update<Map<String, dynamic>>(updates);
     } catch (e) {
       throw Exception('Failed to update category: $e');
     }
   }
 
-  // Delete category
-  Future<void> deleteCategory(String categoryId) async {
-    try {
-      await _apiService.delete(categoryId);
-    } catch (e) {
-      throw Exception('Failed to delete category: $e');
-    }
-  }
+  // Delete category (inherited method)
+  // Future<void> delete(String categoryId) is inherited
 
   // Search categories by name
   Future<List<ExpenseCategory>> searchCategories(String searchTerm) async {
@@ -91,7 +83,4 @@ class ExpenseCategoryService {
     }
   }
 
-  String _generateId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
 }

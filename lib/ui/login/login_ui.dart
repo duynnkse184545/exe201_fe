@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
 import '../../service/api/dto/auth_request.dart';
-import '../../service/storage/token_storage.dart';
 import 'password_reset.dart';
 import 'sign_up.dart';
 
@@ -17,15 +16,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  late AnimationController _emailShakeController;
+  late AnimationController _usernameShakeController;
   late AnimationController _passwordShakeController;
-  late Animation<double> _emailShake;
+  late Animation<double> _usernameShake;
   late Animation<double> _passwordShake;
 
-  String? _emailError;
+  String? _usernameError;
   String? _passwordError;
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -34,7 +33,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    _emailShakeController = AnimationController(
+    _usernameShakeController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 500),
     );
@@ -44,7 +43,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 500),
     );
 
-    _emailShake = buildShakeAnimation(_emailShakeController);
+    _usernameShake = buildShakeAnimation(_usernameShakeController);
     _passwordShake = buildShakeAnimation(_passwordShakeController);
   }
 
@@ -77,10 +76,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             SizedBox(height: 50),
 
             buildFormField(
-              label: 'Email',
-              controller: _emailController,
-              errorText: _emailError,
-              animation: _emailShake,
+              label: 'Username',
+              controller: _usernameController,
+              errorText: _usernameError,
+              animation: _usernameShake,
             ),
             SizedBox(height: 20),
 
@@ -238,9 +237,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
-    _emailShakeController.dispose();
+    _usernameShakeController.dispose();
     _passwordShakeController.dispose();
     super.dispose();
   }
@@ -253,19 +252,19 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     FocusScope.of(context).unfocus();
 
     final authService = AuthService();
-    String email = _emailController.text.trim();
+    String username = _usernameController.text.trim();
     String password = _passwordController.text.trim();
 
     setState(() {
-      _emailError = null;
+      _usernameError = null;
       _passwordError = null;
     });
 
     bool valid = true;
 
-    if (email.isEmpty) {
-      setState(() => _emailError = 'Please enter email');
-      _triggerShake(_emailShakeController);
+    if (username.isEmpty) {
+      setState(() => _usernameError = 'Please enter username');
+      _triggerShake(_usernameShakeController);
       valid = false;
     }
 
@@ -282,31 +281,28 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     await Future.delayed(Duration(seconds: 1));
 
     try {
-      final authResponse = await authService.login(
-        AuthRequest(username: email, password: password),
+      await authService.login(
+        AuthRequest(username: username, password: password),
       );
-
-      // Save token securely
-      await TokenStorage().saveToken(authResponse.token);
 
       if (!mounted) return;
 
+      // Login successful - navigate to main app
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => BottomTab()),
       );
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        _emailError = 'Invalid email or password';
-        _passwordError = 'Invalid email or password';
+        _usernameError = 'Invalid username or password';
+        _passwordError = 'Invalid username or password';
+        _isLoading = false; // Reset loading state on error
       });
-      _triggerShake(_emailShakeController);
+      _triggerShake(_usernameShakeController);
       _triggerShake(_passwordShakeController);
     }
-
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
   }
 
 }

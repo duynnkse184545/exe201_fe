@@ -49,7 +49,7 @@ class _BalanceCardState extends State<BalanceCard> with PressedStateMixin {
         ],
       ),
       child: Material(
-        color: getPressedStateColor(isPressed),
+        color: getPressedStateColor(null, isPressed),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),

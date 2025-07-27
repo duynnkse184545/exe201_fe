@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-Color getPressedStateColor(bool isPressed) {
-  final baseColor = Color(0xff7583ca);
+Color getPressedStateColor(Color? color, bool isPressed) {
+  final baseColor = color ?? Color(0xff7583ca);
   if (isPressed) {
     // Use HSLColor to darken slightly
     final hsl = HSLColor.fromColor(baseColor);
@@ -101,12 +101,12 @@ Future<T?> showCustomBottomSheet<T>({
                             title,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
                               color: Color(0xFF111827),
                             ),
                           ),
-                          SizedBox(height: 24),
+                          SizedBox(height: 10),
                           content,
                           SizedBox(height: 24),
                           SizedBox(

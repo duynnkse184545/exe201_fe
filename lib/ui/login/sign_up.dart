@@ -1,7 +1,7 @@
-import 'package:exe201/service/api/base/generic_handler.dart';
 import 'package:flutter/material.dart';
 
-import '../../model/user.dart';
+import '../../model/user/user.dart';
+import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
 
@@ -337,20 +337,18 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     setState(() => _isLoading = true);
 
     try {
-      final userService = ApiService<User, String>(
-          endpoint: '/api/User/create-user',
-          fromJson: (json) => User.fromJson(json),
-      );
+      final userService = UserService();
 
-      final userCreate = User(
+      final userCreate = UserRequest(
         fullName: "",
         userName: username,
         email: email,
         doB: null,
         passwordHash: password,
+        roleId: 2,
       );
 
-      await userService.create(userCreate.toJson());
+      await userService.createUser(userCreate);
 
       if (!mounted) return;
 

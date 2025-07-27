@@ -15,7 +15,6 @@ abstract class Balance with _$Balance {
     required double monthlyExpenses,
     required DateTime lastUpdated,
     @Default([]) List<Budget> budgets,
-    @Default([]) List<Expense> recentTransactions,
     @Default([]) List<FinancialAccount> accounts,
     @Default(false) bool isLoading,
     String? error,
@@ -28,10 +27,6 @@ abstract class Balance with _$Balance {
 extension BalanceExtensions on Balance {
   double get netSavings => monthlyIncome - monthlyExpenses;
   
-  List<Expense> getRecentTransactionsForCategory(String categoryId) {
-    return recentTransactions
-        .where((expense) => expense.exCId == categoryId)
-        .take(5)
-        .toList();
-  }
+  // Note: recentTransactions removed from backend response
+  // Use BalanceService.getRecentTransactions() and filterTransactionsByCategory() instead
 }

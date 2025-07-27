@@ -17,3 +17,19 @@ abstract class FinancialAccount with _$FinancialAccount {
   factory FinancialAccount.fromJson(Map<String, dynamic> json) =>
       _$FinancialAccountFromJson(json);
 }
+
+// Request model for creating and updating financial accounts
+@freezed
+abstract class FinancialAccountRequest with _$FinancialAccountRequest {
+  const factory FinancialAccountRequest({
+    String? accountId, // null for create, required for update
+    required String accountName,
+    required double balance,
+    @Default('VND') String currencyCode,
+    required String userId,
+    @Default(false) bool isDefault,
+  }) = _FinancialAccountRequest;
+
+  factory FinancialAccountRequest.fromJson(Map<String, dynamic> json) =>
+      _$FinancialAccountRequestFromJson(json);
+}
