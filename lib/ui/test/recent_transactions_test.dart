@@ -110,21 +110,18 @@ class RecentTransactionsSectionTest extends ConsumerWidget {
             error: (error, stack) => Center(
               child: Text('Error loading data: $error'),
             ),
-            data: (balance) => _buildContent(balance),
+            data: (balance) => _buildContent(balance, ref),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent(Balance balance) {
+  Widget _buildContent(Balance balance, WidgetRef ref) {
     // Calculate budget utilization
     final totalBudget = balance.budgets.fold<double>(0, (sum, budget) => sum + budget.budgetAmount);
     final totalSpent = balance.monthlyExpenses; // Using monthly expenses as total spent
     final percentUsed = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
-
-    // Mock recent transactions - in real app, this would come from a provider
-    final transactions = _getMockTransactions(balance);
 
     return Column(
       children: [
@@ -155,80 +152,150 @@ class RecentTransactionsSectionTest extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 24),
-        // Transactions List
-        if (transactions.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.receipt_long_outlined,
-                  size: 48,
-                  color: Colors.grey[400],
+        // Transactions List - Use FutureBuilder to get data from ExpenseService
+        FutureBuilder<List<Expense>>(
+          future: ref.read(expenseServiceProvider).getRecentTransactions(userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('Error loading transactions: ${snapshot.error}'),
+              );
+            }
+            
+            final expenses = snapshot.data ?? [];
+            final transactions = _convertExpensesToTransactions(expenses, ref);
+            
+            if (transactions.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'No Recent Transactions',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
-                  ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.receipt_long_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Recent Transactions',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your recent transactions will appear here',
+                      style: TextStyle(color: Colors.grey[500]),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Your recent transactions will appear here',
-                  style: TextStyle(color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          )
-        else
-          ...transactions.map((tx) => TransactionItemTest(
-            title: tx['title'] as String,
-            subtitle: tx['subtitle'] as String,
-            date: tx['date'] as String,
-            amount: tx['amount'] as String,
-            color: tx['color'] as Color,
-            icon: tx['icon'] as IconData,
-          )),
+              );
+            }
+            
+            return Column(
+              children: transactions.map((tx) => TransactionItemTest(
+                title: tx['title'] as String,
+                subtitle: tx['subtitle'] as String,
+                date: tx['date'] as String,
+                amount: tx['amount'] as String,
+                color: tx['color'] as Color,
+                icon: tx['icon'] as IconData,
+              )).toList(),
+            );
+          },
+        ),
       ],
     );
   }
 
-  List<Map<String, dynamic>> _getMockTransactions(Balance balance) {
-    // Mock data - in real app, this would come from recent expenses
-    return [
-      {
-        'title': 'Netflix Subscription',
-        'subtitle': 'Entertainment',
-        'date': _formatDate(DateTime.now().subtract(const Duration(days: 1))),
-        'amount': '-120.000₫',
-        'color': Colors.red,
-        'icon': Icons.movie,
-      },
-      {
-        'title': 'Grab Ride',
-        'subtitle': 'Transport',
-        'date': _formatDate(DateTime.now().subtract(const Duration(days: 2))),
-        'amount': '-80.000₫',
-        'color': Colors.orange,
-        'icon': Icons.local_taxi,
-      },
-      {
-        'title': 'Monthly Salary',
-        'subtitle': 'Income',
-        'date': _formatDate(DateTime.now().subtract(const Duration(days: 5))),
-        'amount': '+${_formatCurrency(balance.monthlyIncome)}',
-        'color': Colors.green,
-        'icon': Icons.attach_money,
-      },
-    ];
+  List<Map<String, dynamic>> _convertExpensesToTransactions(List<Expense> expenses, WidgetRef ref) {
+    final List<Map<String, dynamic>> transactions = [];
+    final categoriesAsync = ref.read(expenseCategoriesNotifierProvider);
+    
+    // Get categories if available
+    final categories = categoriesAsync.hasValue ? categoriesAsync.value! : <ExpenseCategory>[];
+    
+    // Convert expenses to transaction format
+    for (final expense in expenses) {
+      // Find the category for this expense
+      final category = categories
+          .where((cat) => cat.exCid == expense.categoryId)
+          .firstOrNull;
+      
+      final categoryName = category?.categoryName ?? 'Unknown Category';
+      final isIncome = category?.type == CategoryType.income;
+      
+      transactions.add({
+        'title': expense.description ?? categoryName,
+        'subtitle': categoryName,
+        'date': _formatDate(expense.createdDate),
+        'amount': '${isIncome ? '+' : '-'}${_formatCurrency(expense.amount)}',
+        'color': _getCategoryColor(category, isIncome),
+        'icon': _getCategoryIcon(category, isIncome),
+      });
+    }
+    
+    return transactions;
+  }
+  
+  Color _getCategoryColor(ExpenseCategory? category, bool isIncome) {
+    if (isIncome) return Colors.green;
+    
+    // Return different colors based on category or use a default
+    if (category == null) return Colors.grey;
+    
+    // You can customize colors based on category names
+    final categoryName = category.categoryName.toLowerCase();
+    if (categoryName.contains('food') || categoryName.contains('restaurant')) {
+      return Colors.orange;
+    } else if (categoryName.contains('transport') || categoryName.contains('taxi')) {
+      return Colors.blue;
+    } else if (categoryName.contains('entertainment') || categoryName.contains('movie')) {
+      return Colors.purple;
+    } else if (categoryName.contains('shopping') || categoryName.contains('clothes')) {
+      return Colors.pink;
+    } else if (categoryName.contains('health') || categoryName.contains('medical')) {
+      return Colors.red;
+    }
+    
+    return Colors.indigo; // Default color for other categories
+  }
+  
+  IconData _getCategoryIcon(ExpenseCategory? category, bool isIncome) {
+    if (isIncome) return Icons.attach_money;
+    
+    if (category == null) return Icons.receipt;
+    
+    // Return different icons based on category names
+    final categoryName = category.categoryName.toLowerCase();
+    if (categoryName.contains('food') || categoryName.contains('restaurant')) {
+      return Icons.restaurant;
+    } else if (categoryName.contains('transport') || categoryName.contains('taxi')) {
+      return Icons.local_taxi;
+    } else if (categoryName.contains('entertainment') || categoryName.contains('movie')) {
+      return Icons.movie;
+    } else if (categoryName.contains('shopping') || categoryName.contains('clothes')) {
+      return Icons.shopping_bag;
+    } else if (categoryName.contains('health') || categoryName.contains('medical')) {
+      return Icons.local_hospital;
+    } else if (categoryName.contains('education') || categoryName.contains('school')) {
+      return Icons.school;
+    } else if (categoryName.contains('utility') || categoryName.contains('bill')) {
+      return Icons.receipt_long;
+    }
+    
+    return Icons.payment; // Default icon for other categories
   }
 
   Color _getProgressColor(double percent) {

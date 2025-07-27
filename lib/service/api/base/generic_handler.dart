@@ -2,25 +2,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'api_client.dart';
 
-class ApiService<T, ID> {
-  final Dio _dio = ApiClient().dio;
-
+abstract class ApiService<T, ID> {
+  final Dio dio = ApiClient().dio;
   final String endpoint;
-  final T Function(Map<String, dynamic>) fromJson;
-  final Map<String, dynamic> Function(dynamic) toJson;
 
-  ApiService({
-    required this.endpoint, 
-    required this.fromJson,
-    required this.toJson,
-  });
+  ApiService({required this.endpoint});
+
+  T fromJson(Map<String, dynamic> json);
+  Map<String, dynamic> toJson(dynamic data);
 
   Future<List<T>> getAll() async {
     try {
-      final response = await _dio.get(endpoint);
-      final Map<String, dynamic> responseMap = response.data as Map<String, dynamic>;
-      final List<dynamic> dataList = responseMap['data'];
-
+      final response = await dio.get(endpoint);
+      final List<dynamic> dataList = response.data['data'];
       return dataList.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
       throw Exception('GET failed: ${_formatError(e)}');
@@ -32,7 +26,7 @@ class ApiService<T, ID> {
 
   Future<T> getById(ID id) async {
     try {
-      final response = await _dio.get('$endpoint/$id');
+      final response = await dio.get('$endpoint/$id');
       final Map<String, dynamic> responseMap = response.data as Map<String, dynamic>;
       debugPrint(responseMap.toString());
       if (responseMap['isSuccess'] == true) {
@@ -45,11 +39,13 @@ class ApiService<T, ID> {
     }
   }
 
-  Future<T> create<TRequest>(TRequest data) async {
+  Future<T> create<TRequest>(TRequest data, {String? customPath}) async {
+    final path = customPath != null? '$endpoint/$customPath' : endpoint;
     try {
+      print('path $path');
       final jsonData = toJson(data);
       debugPrint(jsonData.toString());
-      final response = await _dio.post(endpoint, data: jsonData);
+      final response = await dio.post(path, data: jsonData);
       print('Response: ${response.data['data']}');
       return fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -66,7 +62,7 @@ class ApiService<T, ID> {
   Future<T> update<TRequest>(TRequest data) async {
     try {
       final jsonData = toJson(data);
-      final response = await _dio.put(endpoint, data: jsonData);
+      final response = await dio.put(endpoint, data: jsonData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');
@@ -76,7 +72,7 @@ class ApiService<T, ID> {
   Future<T> updateById<TRequest>(ID id, TRequest data) async {
     try {
       final jsonData = toJson(data);
-      final response = await _dio.put('$endpoint/$id', data: jsonData);
+      final response = await dio.put('$endpoint/$id', data: jsonData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');
@@ -85,7 +81,7 @@ class ApiService<T, ID> {
 
   Future<void> delete(ID id) async {
     try {
-      await _dio.delete('$endpoint/$id');
+      await dio.delete('$endpoint/$id');
     } on DioException catch (e) {
       throw Exception('DELETE failed: ${_formatError(e)}');
     }

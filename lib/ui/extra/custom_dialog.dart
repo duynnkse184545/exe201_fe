@@ -101,12 +101,12 @@ Future<T?> showCustomBottomSheet<T>({
                             title,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
                               color: Color(0xFF111827),
                             ),
                           ),
-                          SizedBox(height: 24),
+                          SizedBox(height: 10),
                           content,
                           SizedBox(height: 24),
                           SizedBox(

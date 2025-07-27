@@ -2,35 +2,32 @@ import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
 import '../../model/models.dart';
 
-class FinancialAccountService {
-  late final ApiService<FinancialAccount, String> _apiService;
+class FinancialAccountService extends ApiService<FinancialAccount, String> {
+  FinancialAccountService() : super(endpoint: '/api/FinancialAccount');
 
-  FinancialAccountService() {
-    _apiService = ApiService<FinancialAccount, String>(
-      endpoint: '/api/FinancialAccount',
-      fromJson: (json) => FinancialAccount.fromJson(json),
-      toJson: (account) => account.toJson(),
-    );
+  @override
+  FinancialAccount fromJson(Map<String, dynamic> json) => FinancialAccount.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson(dynamic data) {
+    if (data is FinancialAccount) return data.toJson();
+    if (data is FinancialAccountRequest) return data.toJson();
+    if (data is Map<String, dynamic>) return data;
+    throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
   // Get all accounts for a user
   Future<List<FinancialAccount>> getUserAccounts(String userId) async {
     try {
-      final allAccounts = await _apiService.getAll();
+      final allAccounts = await getAll();
       return allAccounts.where((account) => account.userId == userId).toList();
     } catch (e) {
       throw Exception('Failed to get user accounts: $e');
     }
   }
 
-  // Get account by ID
-  Future<FinancialAccount> getAccountById(String accountId) async {
-    try {
-      return await _apiService.getById(accountId);
-    } catch (e) {
-      throw Exception('Failed to get account: $e');
-    }
-  }
+  // Get account by ID (inherited method)
+  // Future<FinancialAccount> getById(String accountId) is inherited
 
   // Get default account for user
   Future<FinancialAccount?> getDefaultAccount(String userId) async {
@@ -42,22 +39,22 @@ class FinancialAccountService {
     }
   }
 
-  // Create new account
+  // Create new account (inherited method with domain-specific wrapper)
   Future<FinancialAccount> createAccount(FinancialAccountRequest request) async {
     try {
-      return await _apiService.create<FinancialAccountRequest>(request);
+      return await create<FinancialAccountRequest>(request);
     } catch (e) {
       throw Exception('Failed to create account: $e');
     }
   }
 
-  // Update account
+  // Update account (inherited method with domain-specific wrapper)
   Future<FinancialAccount> updateAccount(FinancialAccountRequest updates) async {
     try {
       if (updates.accountId == null) {
         throw ArgumentError('accountId is required for update operations');
       }
-      return await _apiService.updateById<FinancialAccountRequest>(updates.accountId!, updates);
+      return await updateById<FinancialAccountRequest>(updates.accountId!, updates);
     } catch (e) {
       throw Exception('Failed to update account: $e');
     }
@@ -98,7 +95,7 @@ class FinancialAccountService {
       }
       
       // Then set the target account as default
-      final targetAccount = await getAccountById(accountId);
+      final targetAccount = await getById(accountId);
       final request = FinancialAccountRequest(
         accountId: targetAccount.accountId,
         accountName: targetAccount.accountName,
@@ -113,14 +110,8 @@ class FinancialAccountService {
     }
   }
 
-  // Delete account
-  Future<void> deleteAccount(String accountId) async {
-    try {
-      await _apiService.delete(accountId);
-    } catch (e) {
-      throw Exception('Failed to delete account: $e');
-    }
-  }
+  // Delete account (inherited method)
+  // Future<void> delete(String accountId) is inherited
 
   // Check if user has any accounts
   Future<bool> hasAccounts(String userId) async {

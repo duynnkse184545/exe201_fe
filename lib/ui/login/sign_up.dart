@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../model/user.dart';
+import '../../model/user/user.dart';
 import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
@@ -339,12 +339,13 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     try {
       final userService = UserService();
 
-      final userCreate = User(
+      final userCreate = UserRequest(
         fullName: "",
         userName: username,
         email: email,
         doB: null,
         passwordHash: password,
+        roleId: 2,
       );
 
       await userService.createUser(userCreate);

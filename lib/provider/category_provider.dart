@@ -63,7 +63,7 @@ class ExpenseCategoriesNotifier extends _$ExpenseCategoriesNotifier {
   Future<void> deleteCategory(String categoryId) async {
     try {
       final service = ref.read(expenseCategoryServiceProvider);
-      await service.deleteCategory(categoryId);
+      await service.delete(categoryId);
       
       // Refresh to reflect changes
       await refresh();

@@ -4,6 +4,7 @@ import '../../provider/providers.dart';
 import '../../model/models.dart';
 import '../extra/custom_dialog.dart';
 import '../extra/custom_field.dart';
+import 'demo.dart';
 
 class CategoryItemTest extends StatelessWidget {
   final int index;
@@ -56,7 +57,14 @@ class CategoryItemTest extends StatelessWidget {
           onHorizontalDragEnd: (details) {
             // Swipe right to add expense
             if (details.primaryVelocity! > 0) {
-              _showAddExpenseDialog(context);
+              showUnifiedBudgetExpenseDialog(
+                context: context,
+                categoryId: categoryId,
+                categoryName: label,
+                categoryColor: color,
+                userId: userId,
+                initialTab: 1, // Start with expense tab
+              );
             }
           },
           child: Container(
@@ -181,128 +189,6 @@ class CategoryItemTest extends StatelessWidget {
     );
   }
 
-  void _showAddExpenseDialog(BuildContext context) {
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    showCustomBottomSheet(
-      context: context,
-      title: 'Add Expense to $label',
-      actionText: 'ADD EXPENSE',
-      actionColor: const Color(0xff7583ca),
-      content: Column(
-        children: [
-          // Category info
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Category: $label',
-                    style: TextStyle(color: color, fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          buildFormField(
-            label: 'Amount',
-            controller: amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-          const SizedBox(height: 16),
-          buildFormField(
-            label: 'Description (Optional)',
-            controller: descriptionController,
-          ),
-        ],
-      ),
-      onActionPressed: () async {
-        await _handleAddExpense(
-          context,
-          amountController,
-          descriptionController,
-        );
-      },
-    );
-  }
-
-  Future<void> _handleAddExpense(
-    BuildContext context,
-    TextEditingController amountController,
-    TextEditingController descriptionController,
-  ) async {
-    final amount = double.tryParse(amountController.text.trim());
-
-    if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
-      );
-      return;
-    }
-
-    try {
-      // Get user's default account using Consumer/ProviderScope
-      final container = ProviderScope.containerOf(context);
-      final balanceData = container.read(balanceNotifierProvider(userId)).value;
-
-      if (balanceData == null || balanceData.accounts.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No account found. Please create an account first.'),
-          ),
-        );
-        return;
-      }
-
-      final defaultAccount = balanceData.accounts.first;
-
-      // Create expense request
-      final expenseRequest = ExpenseRequest(
-        amount: amount,
-        description: descriptionController.text.trim().isEmpty
-            ? null
-            : descriptionController.text.trim(),
-        exCid: categoryId,
-        accountId: defaultAccount.accountId,
-        userId: userId,
-      );
-
-      // Add expense through service
-      await container
-          .read(expenseServiceProvider)
-          .createExpense(expenseRequest);
-
-      // Refresh balance provider to get updated data
-      await container.read(balanceNotifierProvider(userId).notifier).refresh();
-
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Expense added successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding expense: ${e.toString()}')),
-      );
-    }
-  }
 
   String _formatCurrency(double value) {
     return '${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')} ₫';
@@ -480,7 +366,7 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: () => _showAddExpenseDialog(null, null),
+            onPressed: () => _showSpendingLimitDialog(null, null),
             icon: const Icon(Icons.add),
             label: const Text('Add Category'),
           ),
@@ -490,9 +376,9 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
   }
 
   Widget _buildCategoriesList(
-    List<ExpenseCategory> categories,
-    Balance balance,
-  ) {
+      List<ExpenseCategory> categories,
+      Balance balance,
+      ) {
     return Column(
       children: [
         ...categories.asMap().entries.map((entry) {
@@ -502,24 +388,24 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
 
           // Find budget for this category
           final budget =
-              balance.budgets
-                  .where((b) => b.categoryId == category.exCid)
-                  .isNotEmpty
+          balance.budgets
+              .where((b) => b.categoryId == category.exCid)
+              .isNotEmpty
               ? balance.budgets.firstWhere(
-                  (b) => b.categoryId == category.exCid,
-                )
+                (b) => b.categoryId == category.exCid,
+          )
               : Budget(
-                  budgetId: '',
-                  userId: widget.userId,
-                  categoryId: category.exCid,
-                  accountId: '',
-                  budgetAmount: 0,
-                  startDate: DateTime.now(),
-                  endDate: DateTime.now(),
-                );
+            budgetId: '',
+            userId: widget.userId,
+            categoryId: category.exCid,
+            accountId: '',
+            budgetAmount: 0,
+            startDate: DateTime.now(),
+            endDate: DateTime.now(),
+          );
 
           // Calculate spent amount for this category (mock data for now)
-          final spentAmount = budget.budgetAmount * 0.6; // Mock: 60% spent
+          final spentAmount = budget.spentAmount; // Mock: 60% spent
 
           return CategoryItemTest(
             index: index,
@@ -538,7 +424,7 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
               debugPrint(
                 'DEBUG: Set budget button pressed for category: ${category.exCid}',
               );
-              _showAddExpenseDialog(category.exCid, balance);
+              _showSpendingLimitDialog(category.exCid, balance);
             },
             categoryId: category.exCid,
             userId: widget.userId,
@@ -598,11 +484,11 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
           await ref
               .read(expenseCategoriesNotifierProvider.notifier)
               .createCategory(
-                categoryName: name,
-                description: descriptionController.text.trim().isEmpty
-                    ? null
-                    : descriptionController.text.trim(),
-              );
+            categoryName: name,
+            description: descriptionController.text.trim().isEmpty
+                ? null
+                : descriptionController.text.trim(),
+          );
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Category created successfully')),
@@ -616,49 +502,43 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
     );
   }
 
-  void _showAddExpenseDialog([String? categoryId, Balance? balance]) {
-    debugPrint(
-      'DEBUG: _showAddExpenseDialog called with categoryId: $categoryId',
-    );
-    final budgetAmountController = TextEditingController();
-
-    // Pre-fill existing budget amount if available
-    if (categoryId != null && balance != null) {
-      final existingBudget = balance.budgets
-          .where((b) => b.categoryId == categoryId)
-          .firstOrNull;
-
-      if (existingBudget != null && budgetAmountController.text.isEmpty) {
-        budgetAmountController.text = existingBudget.budgetAmount.toString();
+  void _showSpendingLimitDialog([String? categoryId, Balance? balance]) {
+    debugPrint('DEBUG: _showAddExpenseDialog called with categoryId: $categoryId');
+    
+    if (categoryId != null) {
+      // Find the category name and color
+      final categoriesAsync = ref.read(expenseCategoriesNotifierProvider);
+      if (categoriesAsync.hasValue) {
+        final category = categoriesAsync.value!
+            .where((c) => c.exCid == categoryId)
+            .firstOrNull;
+        
+        if (category != null) {
+          final categoryIndex = categoriesAsync.value!
+              .where((c) => c.type == CategoryType.expense)
+              .toList()
+              .indexWhere((c) => c.exCid == categoryId);
+          final color = categoryColors[categoryIndex % categoryColors.length];
+          
+          showUnifiedBudgetExpenseDialog(
+            context: context,
+            categoryId: categoryId,
+            categoryName: category.categoryName,
+            categoryColor: color,
+            userId: widget.userId,
+            balance: balance,
+            initialTab: 0, // Start with budget tab
+          );
+        }
       }
     }
-
-    debugPrint('DEBUG: About to show dialog. CategoryId: $categoryId');
-    showCustomBottomSheet(
-      context: context,
-      title: categoryId != null
-          ? 'Set Budget for Category'
-          : 'Add New Category',
-      actionText: categoryId != null ? 'SET BUDGET' : 'CREATE CATEGORY',
-      actionColor: const Color(0xff7583ca),
-      content: categoryId != null
-          ? _buildBudgetContent(categoryId, budgetAmountController, balance)
-          : _buildCategoryContent(),
-      onActionPressed: () async {
-        if (categoryId != null) {
-          await _handleBudgetAction(categoryId, budgetAmountController);
-        } else {
-          await _handleCategoryAction();
-        }
-      },
-    );
   }
 
   Widget _buildBudgetContent(
-    String categoryId,
-    TextEditingController budgetAmountController,
-    Balance? balance,
-  ) {
+      String categoryId,
+      TextEditingController budgetAmountController,
+      Balance? balance,
+      ) {
     return Column(
       children: [
         // Show current budget info if exists
@@ -728,95 +608,6 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
     );
   }
 
-  Future<void> _handleBudgetAction(
-    String categoryId,
-    TextEditingController budgetAmountController,
-  ) async {
-    final amountText = budgetAmountController.text.trim();
-
-    if (amountText.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a budget amount')),
-      );
-      return;
-    }
-
-    final budgetAmount = double.tryParse(amountText);
-    if (budgetAmount == null || budgetAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid budget amount')),
-      );
-      return;
-    }
-
-    try {
-      // Show loading
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Setting budget...')));
-
-      // Get user's default account
-      final balanceData = ref
-          .read(balanceNotifierProvider(widget.userId))
-          .value;
-      if (balanceData == null || balanceData.accounts.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No account found. Please create an account first.'),
-          ),
-        );
-        return;
-      }
-
-      final defaultAccount = balanceData.accounts.first;
-      final now = DateTime.now();
-
-      // Check if budget already exists
-      final existingBudget = balanceData.budgets
-          .where((b) => b.categoryId == categoryId)
-          .firstOrNull;
-
-      if (existingBudget != null) {
-        // Update existing budget
-        final updateRequest = BudgetRequest(
-          budgetId: existingBudget.budgetId,
-          // Required for update
-          categoryId: null,
-          accountId: null,
-          budgetAmount: budgetAmount,
-          userId: null,
-        );
-        await ref.read(budgetServiceProvider).updateBudget(updateRequest);
-        debugPrint('SUCCESS: Budget updated for category $categoryId');
-      } else {
-        // Create new budget
-        final request = BudgetRequest(
-          categoryId: categoryId,
-          accountId: defaultAccount.accountId,
-          budgetAmount: budgetAmount,
-          userId: widget.userId,
-          isLocked: false,
-        );
-
-        await ref.read(budgetServiceProvider).createBudget(request);
-        debugPrint('SUCCESS: Budget created for category $categoryId');
-      }
-
-      // Refresh balance provider to get updated data
-      await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
-
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Budget set successfully!')));
-    } catch (e, stackTrace) {
-      debugPrint('ERROR: Failed to set budget: $e');
-      debugPrint('STACK: $stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error setting budget: ${e.toString()}')),
-      );
-    }
-  }
 
   Future<void> _handleCategoryAction() async {
     // Close current dialog and show the proper category creation dialog

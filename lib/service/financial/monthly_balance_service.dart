@@ -2,21 +2,24 @@ import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
 import '../../model/models.dart';
 
-class MonthlyBalanceService {
-  late final ApiService<MonthlyBalance, String> _apiService;
+class MonthlyBalanceService extends ApiService<MonthlyBalance, String> {
+  MonthlyBalanceService() : super(endpoint: '/api/monthly-balances');
 
-  MonthlyBalanceService() {
-    _apiService = ApiService<MonthlyBalance, String>(
-      endpoint: '/api/monthly-balances',
-      fromJson: (json) => MonthlyBalance.fromJson(json),
-      toJson: (balance) => balance.toJson(),
-    );
+  @override
+  MonthlyBalance fromJson(Map<String, dynamic> json) => MonthlyBalance.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson(dynamic data) {
+    if (data is MonthlyBalance) return data.toJson();
+    if (data is MonthlyBalanceRequest) return data.toJson();
+    if (data is Map<String, dynamic>) return data;
+    throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
   // Get current active monthly balance for user
   Future<MonthlyBalance?> getCurrentMonthlyBalance(String userId) async {
     try {
-      final allBalances = await _apiService.getAll();
+      final allBalances = await getAll();
       return allBalances
           .where((balance) => balance.userId == userId && balance.isActive)
           .firstOrNull;
@@ -28,7 +31,7 @@ class MonthlyBalanceService {
   // Get monthly balance for specific month
   Future<MonthlyBalance?> getMonthlyBalance(String userId, DateTime month) async {
     try {
-      final allBalances = await _apiService.getAll();
+      final allBalances = await getAll();
       final targetMonth = DateTime(month.year, month.month, 1);
       return allBalances
           .where((balance) => 
@@ -41,10 +44,10 @@ class MonthlyBalanceService {
     }
   }
 
-  // Create new monthly balance
+  // Create new monthly balance (inherited method with domain-specific wrapper)
   Future<MonthlyBalance> createMonthlyBalance(MonthlyBalanceRequest request) async {
     try {
-      return await _apiService.create<MonthlyBalanceRequest>(request);
+      return await create<MonthlyBalanceRequest>(request);
     } catch (e) {
       throw Exception('Failed to create monthly balance: $e');
     }
@@ -126,7 +129,7 @@ class MonthlyBalanceService {
   // Get user's monthly balance history
   Future<List<MonthlyBalance>> getMonthlyBalanceHistory(String userId, {int limit = 12}) async {
     try {
-      final allBalances = await _apiService.getAll();
+      final allBalances = await getAll();
       final userBalances = allBalances
           .where((balance) => balance.userId == userId)
           .toList();
@@ -140,26 +143,20 @@ class MonthlyBalanceService {
     }
   }
 
-  // Update monthly balance
+  // Update monthly balance (inherited method with domain-specific wrapper)
   Future<MonthlyBalance> updateMonthlyBalance(MonthlyBalanceRequest updates) async {
     try {
       if (updates.balanceId == null) {
         throw ArgumentError('balanceId is required for update operations');
       }
-      return await _apiService.updateById<MonthlyBalanceRequest>(updates.balanceId!, updates);
+      return await updateById<MonthlyBalanceRequest>(updates.balanceId!, updates);
     } catch (e) {
       throw Exception('Failed to update monthly balance: $e');
     }
   }
 
-  // Delete monthly balance
-  Future<void> deleteMonthlyBalance(String balanceId) async {
-    try {
-      await _apiService.delete(balanceId);
-    } catch (e) {
-      throw Exception('Failed to delete monthly balance: $e');
-    }
-  }
+  // Delete monthly balance (inherited method)
+  // Future<void> delete(String balanceId) is inherited
 
   // Generate locked budgets for next month based on current month
   Future<List<BudgetRequest>> generateLockedBudgetAllocations(String userId, DateTime currentMonth) async {

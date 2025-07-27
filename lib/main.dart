@@ -21,8 +21,8 @@ class TvFApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
         fontFamily: 'Roboto',
       ),
-      home: BudgetTabTest(userId: 'F29EA8B0-E604-47F6-B048-EA28D74D9529'),
-      //home: BottomTab(),
+      //home: BudgetTabTest(userId: 'F29EA8B0-E604-47F6-B048-EA28D74D9529'),
+      home: LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }

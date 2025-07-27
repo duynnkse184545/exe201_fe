@@ -2,21 +2,24 @@ import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
 import '../../model/models.dart';
 
-class BudgetService {
-  late final ApiService<Budget, String> _apiService;
+class BudgetService extends ApiService<Budget, String> {
+  BudgetService() : super(endpoint: '/api/Budget');
 
-  BudgetService() {
-    _apiService = ApiService<Budget, String>(
-      endpoint: '/api/Budget',
-      fromJson: (json) => Budget.fromJson(json),
-      toJson: (budget) => budget.toJson(),
-    );
+  @override
+  Budget fromJson(Map<String, dynamic> json) => Budget.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson(dynamic data) {
+    if (data is Budget) return data.toJson();
+    if (data is BudgetRequest) return data.toJson();
+    if (data is Map<String, dynamic>) return data;
+    throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
   // Get all budgets for a user
   Future<List<Budget>> getUserBudgets(String userId) async {
     try {
-      final allBudgets = await _apiService.getAll();
+      final allBudgets = await getAll();
       return allBudgets.where((budget) => budget.userId == userId).toList();
     } catch (e) {
       throw Exception('Failed to get user budgets: $e');
@@ -26,7 +29,7 @@ class BudgetService {
   // Get budgets for a specific account
   Future<List<Budget>> getAccountBudgets(String accountId) async {
     try {
-      final allBudgets = await _apiService.getAll();
+      final allBudgets = await getAll();
       return allBudgets.where((budget) => budget.accountId == accountId).toList();
     } catch (e) {
       throw Exception('Failed to get account budgets: $e');
@@ -68,31 +71,25 @@ class BudgetService {
     }
   }
 
-  // Get budget by ID
-  Future<Budget> getBudgetById(String budgetId) async {
-    try {
-      return await _apiService.getById(budgetId);
-    } catch (e) {
-      throw Exception('Failed to get budget: $e');
-    }
-  }
+  // Get budget by ID (inherited method)
+  // Future<Budget> getById(String budgetId) is inherited
 
-  // Create new budget
+  // Create new budget (inherited method with domain-specific wrapper)
   Future<Budget> createBudget(BudgetRequest request) async {
     try {
-      return await _apiService.create<BudgetRequest>(request);
+      return await create<BudgetRequest>(request);
     } catch (e) {
       throw Exception('Failed to create budget: $e');
     }
   }
 
-  // Update budget
+  // Update budget (inherited method with domain-specific wrapper)
   Future<Budget> updateBudget(BudgetRequest updates) async {
     try {
       if (updates.budgetId == null) {
         throw ArgumentError('budgetId is required for update operations');
       }
-      return await _apiService.update<BudgetRequest>(updates);
+      return await update<BudgetRequest>(updates);
     } catch (e) {
       throw Exception('Failed to update budget: $e');
     }
@@ -101,21 +98,24 @@ class BudgetService {
   // Update budget amount
   Future<Budget> updateBudgetAmount(String budgetId, double newAmount) async {
     try {
-      return await _apiService.updateById<Map<String, dynamic>>(budgetId, {'budgetAmount': newAmount});
+      return await updateById<Map<String, dynamic>>(budgetId, {'budgetAmount': newAmount});
     } catch (e, stack) {
       throw Exception('Failed to update budget amount: $e, $stack');
     }
   }
 
-
-  // Delete budget
-  Future<void> deleteBudget(String budgetId) async {
+  // Toggle budget lock
+  Future<Budget> toggleBudgetLock(String budgetId, bool isLocked) async {
     try {
-      await _apiService.delete(budgetId);
+      final response = await dio.put('$endpoint/lock/$budgetId', data: {'isLocked': isLocked});
+      return fromJson(response.data['data']);
     } catch (e) {
-      throw Exception('Failed to delete budget: $e');
+      throw Exception('Failed to toggle budget lock: $e');
     }
   }
+
+  // Delete budget (inherited method)
+  // Future<void> delete(String budgetId) is inherited
 
   // Get over-budget categories
   Future<List<Budget>> getOverBudgetCategories(String userId) async {

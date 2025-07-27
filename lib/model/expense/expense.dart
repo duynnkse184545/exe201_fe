@@ -6,11 +6,11 @@ part 'expense.g.dart';
 @freezed
 abstract class Expense with _$Expense {
   const factory Expense({
-    required String expensesId,
+    required String expenseId,
     required double amount,
     String? description,
     required DateTime createdDate,
-    required String exCid,
+    required String categoryId,
     required String accountId,
     required String userId,
     String? categoryName,
@@ -24,10 +24,10 @@ abstract class Expense with _$Expense {
 @freezed
 abstract class ExpenseRequest with _$ExpenseRequest {
   const factory ExpenseRequest({
-    String? expensesId, // null for create, required for update
+    String? expenseId,
     required double amount,
     String? description,
-    required String exCid,
+    required String categoryId,
     required String accountId,
     required String userId,
   }) = _ExpenseRequest;
