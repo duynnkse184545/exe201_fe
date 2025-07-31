@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../provider/providers.dart';
 import '../../model/models.dart';
+import '../extra/category_colors.dart';
 
 class TransactionItemTest extends StatelessWidget {
   final String title;
@@ -10,7 +11,7 @@ class TransactionItemTest extends StatelessWidget {
   final String date;
   final String amount;
   final Color color;
-  final IconData icon;
+  final String icon;
 
   const TransactionItemTest({
     super.key,
@@ -41,8 +42,8 @@ class TransactionItemTest extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: color.withValues(alpha: 0.2),
-            child: Icon(icon, color: color),
+            backgroundColor: color,
+            child: Text(icon),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -118,56 +119,135 @@ class RecentTransactionsSectionTest extends ConsumerWidget {
   }
 
   Widget _buildContent(Balance balance, WidgetRef ref) {
-    // Calculate budget utilization
-    final totalBudget = balance.budgets.fold<double>(0, (sum, budget) => sum + budget.budgetAmount);
-    final totalSpent = balance.monthlyExpenses; // Using monthly expenses as total spent
-    final percentUsed = totalBudget > 0 ? (totalSpent / totalBudget).clamp(0.0, 1.0) : 0.0;
+
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        ref.read(expenseServiceProvider).getRecentTransactions(),
+        ref.read(expenseCategoryServiceProvider).getAllCategories(),
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError) {
+          return Center(child: Text('Error loading data: ${snapshot.error}'));
+        }
+        
+        final data = snapshot.data ?? [];
+        final expenses = data[0] as List<Expense>;
+        final categories = data[1] as List<ExpenseCategory>;
+        
+        // Use the same custom order as budget categories
+        const List<String> customOrder = [
+          "Fixed Expenses",
+          "Living Expenses", 
+          "Entertainment & Personal",
+          "Education & Self-improvement",
+          "Other Expenses",
+          "Saving"
+        ];
+        
+        // Create a map of categoryId to ExpenseCategory for quick lookup
+        final categoryMap = {for (var cat in categories) cat.exCid: cat};
+        
+        // Filter and sort expense categories using the same logic as budget categories
+        final expenseCategories = categories
+            .where((category) => category.type == CategoryType.expense)
+            .toList()
+          ..sort((a, b) => customOrder.indexOf(a.categoryName).compareTo(
+              customOrder.indexOf(b.categoryName)));
+        
+        // Calculate expense breakdown by category
+        final Map<String, double> categoryExpenses = {};
+        final Map<String, Color> categoryColorMap = {};
+        final Map<String, String> categoryIconMap = {};
+        
+        // Group expenses by category
+        for (final expense in expenses) {
+          final category = categoryMap[expense.categoryId];
+          if (category != null && category.type == CategoryType.expense) {
+            final categoryName = category.categoryName;
+            categoryExpenses[categoryName] = (categoryExpenses[categoryName] ?? 0) + expense.amount;
+          }
+        }
+        
+        // Assign colors and icons using the same order as budget categories
+        for (int i = 0; i < expenseCategories.length; i++) {
+          final category = expenseCategories[i];
+          final categoryName = category.categoryName;
+          final style = CategoryColors.getStyleByIndex(i);
+          categoryColorMap[categoryName] = style.color;
+          categoryIconMap[categoryName] = style.icon;
+        }
+        
+        final totalExpenses = categoryExpenses.values.fold<double>(0, (sum, amount) => sum + amount);
+        
+        return _buildPieChart(categoryExpenses, categoryColorMap, categoryIconMap, totalExpenses, expenses, balance, ref, categoryMap);
+      },
+    );
+  }
+  
+  Widget _buildPieChart(Map<String, double> categoryExpenses, Map<String, Color> categoryColorMap, Map<String, String> categoryIconMap, double totalExpenses, List<Expense> expenses, Balance balance, WidgetRef ref, Map<String, ExpenseCategory> categoryMap) {
 
     return Column(
       children: [
-        // Circular Chart
+        // Pie Chart
         Center(
-          child: CircularPercentIndicator(
-            radius: 80.0,
-            lineWidth: 14.0,
-            animation: true,
-            percent: percentUsed,
-            center: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "${(percentUsed * 100).toStringAsFixed(1)}%",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 160,
+                height: 160,
+                child: PieChart(
+                  PieChartData(
+                    sections: categoryExpenses.entries.map((entry) {
+                      final categoryName = entry.key;
+                      final amount = entry.value;
+                      final percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
+                      final color = categoryColorMap[categoryName] ?? Colors.grey;
+                      
+                      return PieChartSectionData(
+                        color: color,
+                        value: amount,
+                        title: '${percentage.toStringAsFixed(1)}%',
+                        titleStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        radius: 50,
+                      );
+                    }).toList(),
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 50,
+                    startDegreeOffset: -90,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "${_formatShortCurrency(totalSpent)} / ${_formatShortCurrency(totalBudget)}",
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            circularStrokeCap: CircularStrokeCap.round,
-            progressColor: _getProgressColor(percentUsed),
-            backgroundColor: _getProgressColor(percentUsed).withValues(alpha: 0.2),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Total",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${_formatShortCurrency(totalExpenses)}",
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
-        // Transactions List - Use FutureBuilder to get data from ExpenseService
-        FutureBuilder<List<Expense>>(
-          future: ref.read(expenseServiceProvider).getRecentTransactions(userId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            
-            if (snapshot.hasError) {
-              return Center(
-                child: Text('Error loading transactions: ${snapshot.error}'),
-              );
-            }
-            
-            final expenses = snapshot.data ?? [];
-            final transactions = _convertExpensesToTransactions(expenses, ref);
+        // Transactions List - Use the expenses we already fetched
+        Builder(
+          builder: (context) {
+            final transactions = _convertExpensesToTransactions(expenses, ref, categoryColorMap, categoryIconMap, categoryMap);
             
             if (transactions.isEmpty) {
               return Container(
@@ -210,7 +290,7 @@ class RecentTransactionsSectionTest extends ConsumerWidget {
                 date: tx['date'] as String,
                 amount: tx['amount'] as String,
                 color: tx['color'] as Color,
-                icon: tx['icon'] as IconData,
+                icon: tx['icon'] as String,
               )).toList(),
             );
           },
@@ -219,90 +299,33 @@ class RecentTransactionsSectionTest extends ConsumerWidget {
     );
   }
 
-  List<Map<String, dynamic>> _convertExpensesToTransactions(List<Expense> expenses, WidgetRef ref) {
+  List<Map<String, dynamic>> _convertExpensesToTransactions(List<Expense> expenses, WidgetRef ref, Map<String, Color> categoryColorMap, Map<String, String> categoryIconMap, Map<String, ExpenseCategory> categoryMap) {
     final List<Map<String, dynamic>> transactions = [];
-    final categoriesAsync = ref.read(expenseCategoriesNotifierProvider);
     
-    // Get categories if available
-    final categories = categoriesAsync.hasValue ? categoriesAsync.value! : <ExpenseCategory>[];
-    
-    // Convert expenses to transaction format
+    // Convert expenses to transaction format (only expense transactions)
     for (final expense in expenses) {
       // Find the category for this expense
-      final category = categories
-          .where((cat) => cat.exCid == expense.categoryId)
-          .firstOrNull;
+      final category = categoryMap[expense.categoryId];
       
-      final categoryName = category?.categoryName ?? 'Unknown Category';
-      final isIncome = category?.type == CategoryType.income;
+      // Skip if category not found or is income category
+      if (category == null || category.type == CategoryType.income) continue;
+      
+      final categoryName = category.categoryName;
       
       transactions.add({
         'title': expense.description ?? categoryName,
         'subtitle': categoryName,
         'date': _formatDate(expense.createdDate),
-        'amount': '${isIncome ? '+' : '-'}${_formatCurrency(expense.amount)}',
-        'color': _getCategoryColor(category, isIncome),
-        'icon': _getCategoryIcon(category, isIncome),
+        'amount': '-${_formatCurrency(expense.amount)}',
+        'color': categoryColorMap[categoryName] ?? Colors.grey,
+        'icon': categoryIconMap[categoryName] ?? '📊',
       });
     }
     
     return transactions;
   }
   
-  Color _getCategoryColor(ExpenseCategory? category, bool isIncome) {
-    if (isIncome) return Colors.green;
-    
-    // Return different colors based on category or use a default
-    if (category == null) return Colors.grey;
-    
-    // You can customize colors based on category names
-    final categoryName = category.categoryName.toLowerCase();
-    if (categoryName.contains('food') || categoryName.contains('restaurant')) {
-      return Colors.orange;
-    } else if (categoryName.contains('transport') || categoryName.contains('taxi')) {
-      return Colors.blue;
-    } else if (categoryName.contains('entertainment') || categoryName.contains('movie')) {
-      return Colors.purple;
-    } else if (categoryName.contains('shopping') || categoryName.contains('clothes')) {
-      return Colors.pink;
-    } else if (categoryName.contains('health') || categoryName.contains('medical')) {
-      return Colors.red;
-    }
-    
-    return Colors.indigo; // Default color for other categories
-  }
   
-  IconData _getCategoryIcon(ExpenseCategory? category, bool isIncome) {
-    if (isIncome) return Icons.attach_money;
-    
-    if (category == null) return Icons.receipt;
-    
-    // Return different icons based on category names
-    final categoryName = category.categoryName.toLowerCase();
-    if (categoryName.contains('food') || categoryName.contains('restaurant')) {
-      return Icons.restaurant;
-    } else if (categoryName.contains('transport') || categoryName.contains('taxi')) {
-      return Icons.local_taxi;
-    } else if (categoryName.contains('entertainment') || categoryName.contains('movie')) {
-      return Icons.movie;
-    } else if (categoryName.contains('shopping') || categoryName.contains('clothes')) {
-      return Icons.shopping_bag;
-    } else if (categoryName.contains('health') || categoryName.contains('medical')) {
-      return Icons.local_hospital;
-    } else if (categoryName.contains('education') || categoryName.contains('school')) {
-      return Icons.school;
-    } else if (categoryName.contains('utility') || categoryName.contains('bill')) {
-      return Icons.receipt_long;
-    }
-    
-    return Icons.payment; // Default icon for other categories
-  }
-
-  Color _getProgressColor(double percent) {
-    if (percent < 0.5) return Colors.green;
-    if (percent < 0.8) return Colors.orange;
-    return Colors.red;
-  }
 
   String _formatShortCurrency(double value) {
     if (value >= 1000000) {

@@ -397,7 +397,6 @@ class _UnifiedBudgetExpenseDialogState
           categoryId: null,
           accountId: null,
           budgetAmount: budgetAmount,
-          userId: null,
         );
         await ref.read(budgetServiceProvider).updateBudget(updateRequest);
       } else {
@@ -405,7 +404,6 @@ class _UnifiedBudgetExpenseDialogState
           categoryId: widget.categoryId,
           accountId: defaultAccount.accountId,
           budgetAmount: budgetAmount,
-          userId: widget.userId,
           isLocked: false,
         );
         await ref.read(budgetServiceProvider).createBudget(request);

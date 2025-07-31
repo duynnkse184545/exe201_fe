@@ -22,7 +22,7 @@ class TvFApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
       //home: BudgetTabTest(userId: 'F29EA8B0-E604-47F6-B048-EA28D74D9529'),
-      home: LoginPage(),
+      home: BottomTab(),
       debugShowCheckedModeBanner: false,
     );
   }

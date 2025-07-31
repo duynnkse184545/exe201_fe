@@ -1,6 +1,7 @@
 import 'package:exe201/ui/budget/budget.dart';
 import 'package:exe201/ui/calendar/calendar.dart';
 import 'package:exe201/ui/community/community.dart';
+import 'package:exe201/ui/test/budget_tab.dart';
 import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,8 +20,8 @@ class _BottomTabState extends State<BottomTab> {
 
   final List<Widget> _tabs = [
     const HomeTab(),
+    const BudgetTabTest(),
     const BudgetTab(),
-    const CommunityTab(),
     const CalendarTab(),
     const UserTab(),
   ];

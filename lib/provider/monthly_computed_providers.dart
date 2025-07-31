@@ -146,7 +146,7 @@ double carryOverToNextBalance(Ref ref, String userId) {
 @riverpod
 Future<Map<String, int>> currentMonthBudgetHealth(Ref ref, String userId) async {
   final balanceService = ref.watch(balanceServiceProvider);
-  return await balanceService.getBudgetHealth(userId);
+  return await balanceService.getBudgetHealth();
 }
 
 // Check if current month is completed

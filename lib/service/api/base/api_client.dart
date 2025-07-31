@@ -11,7 +11,7 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://exe202.runasp.net/',
+        baseUrl: 'http://10.0.2.2:5134/',
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
@@ -40,6 +40,7 @@ class ApiClient {
 
   Future<void> handleUnauthorized() async {
     // Clear the stored token
+    print('ApiClient.handleUnauthorized() - Clearing token due to 401 error');
     await _tokenStorage.clearToken();
     
     // You can add additional logic here like:

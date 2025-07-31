@@ -29,9 +29,9 @@ class ExpenseService extends ApiService<Expense, String> {
   }
 
   // Get recent transactions from specific endpoint
-  Future<List<Expense>> getRecentTransactions(String userId) async {
+  Future<List<Expense>> getRecentTransactions() async {
     try {
-      final response = await dio.get('$endpoint/recent-transactions/$userId');
+      final response = await dio.get('$endpoint/recent-transactions');
       final List<dynamic> transactionsList = response.data['data'];
       debugPrint('recentTrans: $transactionsList');
       return transactionsList.map((json) => fromJson(json as Map<String, dynamic>)).toList();

@@ -4,6 +4,7 @@ import '../../provider/providers.dart';
 import '../../model/models.dart';
 import '../extra/custom_dialog.dart';
 import '../extra/custom_field.dart';
+import '../extra/category_colors.dart';
 import 'demo.dart';
 
 class CategoryItemTest extends StatelessWidget {
@@ -75,20 +76,30 @@ class CategoryItemTest extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            CategoryColors.getIconByIndex(index),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           label,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -132,7 +143,7 @@ class CategoryItemTest extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Budget Allocated:'),
+                              const Text('Initial value:'),
                               Text(
                                 _formatCurrency(amount),
                                 style: const TextStyle(
@@ -212,19 +223,19 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
     return '${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')} VND';
   }
 
-  final List<Color> categoryColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.red,
-    Colors.teal,
-    Colors.indigo,
-    Colors.pink,
-  ];
+  // Using shared color palette from CategoryColors
 
   @override
   Widget build(BuildContext context) {
+    const List<String> customOrder =
+    [
+      "Fixed Expenses",
+    "Living Expenses",
+    "Entertainment & Personal",
+    "Education & Self-improvement",
+    "Other Expenses",
+    "Saving"
+    ];
     debugPrint('DEBUG: CategoriesSectionTest build() called');
     final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
     debugPrint('DEBUG: Categories state: ${categoriesAsync.runtimeType}');
@@ -254,10 +265,8 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
             ),
           ),
           const SizedBox(height: 16),
-          // Handle both async values without nesting to avoid cycles
           Builder(
             builder: (context) {
-              // Check categories first
               if (categoriesAsync.hasError) {
                 debugPrint('ERROR: Categories error: ${categoriesAsync.error}');
                 return Center(
@@ -301,9 +310,10 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
                 // Filter to only show expense categories
                 final expenseCategories = categories
                     .where((category) => category.type == CategoryType.expense)
-                    .toList();
+                    .toList()..sort((a, b) => customOrder.indexOf(a.categoryName).compareTo(
+                    customOrder.indexOf(b.categoryName)));
                 debugPrint(
-                  'DEBUG: Expense categories count: ${expenseCategories.length}',
+                  'DEBUG: Expense categories count: ${expenseCategories.toString()}',
                 );
 
                 if (expenseCategories.isEmpty) {
@@ -384,7 +394,7 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
         ...categories.asMap().entries.map((entry) {
           final index = entry.key;
           final category = entry.value;
-          final color = categoryColors[index % categoryColors.length];
+          final color = CategoryColors.getColorByIndex(index);
 
           // Find budget for this category
           final budget =
@@ -518,7 +528,7 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
               .where((c) => c.type == CategoryType.expense)
               .toList()
               .indexWhere((c) => c.exCid == categoryId);
-          final color = categoryColors[categoryIndex % categoryColors.length];
+          final color = CategoryColors.getColorByIndex(categoryIndex);
           
           showUnifiedBudgetExpenseDialog(
             context: context,
@@ -532,86 +542,5 @@ class _CategoriesSectionTestState extends ConsumerState<CategoriesSectionTest> {
         }
       }
     }
-  }
-
-  Widget _buildBudgetContent(
-      String categoryId,
-      TextEditingController budgetAmountController,
-      Balance? balance,
-      ) {
-    return Column(
-      children: [
-        // Show current budget info if exists
-        Builder(
-          builder: (context) {
-            if (balance == null) return const SizedBox.shrink();
-
-            final existingBudget = balance.budgets
-                .where((b) => b.categoryId == categoryId)
-                .firstOrNull;
-
-            if (existingBudget != null) {
-              return Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: Colors.blue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Current Budget: ${_formatCurrency(existingBudget.budgetAmount)}\nSpent: ${_formatCurrency(existingBudget.spentAmount)}',
-                        style: const TextStyle(color: Colors.blue),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          },
-        ),
-
-        buildFormField(
-          label: 'Budget Amount',
-          controller: budgetAmountController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Set the spending limit for this category this month',
-          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryContent() {
-    return Column(
-      children: [
-        buildFormField(
-          label: 'Category Name',
-          controller: TextEditingController(),
-        ),
-        const SizedBox(height: 16),
-        buildFormField(
-          label: 'Description (Optional)',
-          controller: TextEditingController(),
-        ),
-      ],
-    );
-  }
-
-
-  Future<void> _handleCategoryAction() async {
-    // Close current dialog and show the proper category creation dialog
-    Navigator.of(context).pop();
-    _showAddCategoryDialog();
   }
 }

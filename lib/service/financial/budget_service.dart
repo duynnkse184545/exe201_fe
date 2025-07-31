@@ -144,7 +144,6 @@ class BudgetService extends ApiService<Budget, String> {
         categoryId: previousBudget.categoryId,
         accountId: previousBudget.accountId,
         budgetAmount: previousBudget.budgetAmount,
-        userId: previousBudget.userId,
         isLocked: previousBudget.isLocked,
       );
       return await createBudget(request);

@@ -1,29 +1,39 @@
 import 'package:exe201/ui/extra/custom_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../provider/providers.dart';
+import '../../../model/models.dart';
 import '../../extra/custom_field.dart';
+import '../../extra/category_colors.dart';
+import '../../test/demo.dart';
 
 class CategoryItem extends StatelessWidget {
   final int index;
   final String label;
   final double amount;
-  final double displayedAmount;
+  final double spentAmount;
   final Color color;
   final bool isExpanded;
   final VoidCallback onTap;
   final bool isPressed;
   final VoidCallback onActionPressed;
+  final String categoryId;
+  final String userId;
+
 
   const CategoryItem({
     super.key,
     required this.index,
     required this.label,
     required this.amount,
-    required this.displayedAmount,
+    required this.spentAmount,
     required this.color,
     required this.isExpanded,
     required this.onTap,
     required this.isPressed,
-    required this.onActionPressed
+    required this.onActionPressed,
+    required this.categoryId,
+    required this.userId,
   });
 
   String _formatCurrency(double value) {
@@ -37,7 +47,7 @@ class CategoryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      height: isExpanded ? 110 : 45,
+      height: isExpanded ? 170 : 55,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -65,19 +75,56 @@ class CategoryItem extends StatelessWidget {
                         bottomRight: Radius.circular(12),
                       ),
                     ),
-                    child: Center(
-                      child: ElevatedButton(
-                        onPressed: () => onActionPressed(),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 80),
-                          backgroundColor: getPressedStateColor(color, isPressed),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Initial value:'),
+                            Text(
+                              _formatCurrency(amount),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Spent:'),
+                            Text(
+                              _formatCurrency(spentAmount),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: spentAmount > amount
+                                    ? Colors.red
+                                    : Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          child: ElevatedButton(
+                            onPressed: () => onActionPressed(),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 80,
+                              ),
+                              backgroundColor: getPressedStateColor(
+                                color,
+                                isPressed,
+                              ),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Set spending limit"),
                           ),
                         ),
-                        child: const Text("Set spending limit"),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -88,6 +135,7 @@ class CategoryItem extends StatelessWidget {
           // Main container (always on top)
           Positioned(
             child: Container(
+              height: 50,
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: BorderRadius.circular(12),
@@ -103,6 +151,19 @@ class CategoryItem extends StatelessWidget {
               ),
               child: GestureDetector(
                 onTap: onTap,
+                onHorizontalDragEnd: (details) {
+                  // Swipe right to add expense
+                  if (details.primaryVelocity! > 0) {
+                    showUnifiedBudgetExpenseDialog(
+                      context: context,
+                      categoryId: categoryId,
+                      categoryName: label,
+                      categoryColor: color,
+                      userId: userId,
+                      initialTab: 1, // Start with expense tab
+                    );
+                  }
+                },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -119,10 +180,9 @@ class CategoryItem extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          '$index',
+                          CategoryColors.getIconByIndex(index),
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
                       ),
@@ -132,7 +192,7 @@ class CategoryItem extends StatelessWidget {
                           label,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 13,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -141,8 +201,8 @@ class CategoryItem extends StatelessWidget {
                       TweenAnimationBuilder<double>(
                         duration: const Duration(milliseconds: 800),
                         tween: Tween<double>(
-                          begin: displayedAmount,
-                          end: amount,
+                          begin: 0,
+                          end: amount - spentAmount,
                         ),
                         builder: (context, value, child) {
                           return Text(
@@ -154,6 +214,12 @@ class CategoryItem extends StatelessWidget {
                           );
                         },
                       ),
+                      Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.black,
+                      )
                     ],
                   ),
                 ),
@@ -166,119 +232,333 @@ class CategoryItem extends StatelessWidget {
   }
 }
 
-class CategoriesSection extends StatefulWidget {
-  const CategoriesSection({super.key});
+class CategoriesSection extends ConsumerStatefulWidget {
+  final String userId;
+  const CategoriesSection({super.key, required this.userId});
 
   @override
-  State<CategoriesSection> createState() => _CategoriesSectionState();
+  ConsumerState<CategoriesSection> createState() => _CategoriesSectionState();
 }
 
-class _CategoriesSectionState extends State<CategoriesSection> {
+class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
   int? expandedIndex;
   int? pressedIndex;
 
   // Updated to use Map<String, dynamic> with double amounts
-  final List<Map<String, dynamic>> categories = [
-    {'label': 'Fixed Expenses', 'amount': 2000000.0, 'displayedAmount': 2000000.0, 'color': Colors.blue},
-    {'label': 'Living Expenses', 'amount': 1500000.0, 'displayedAmount': 1500000.0, 'color': Colors.green},
-    {'label': 'Entertainment & Personal', 'amount': 600000.0, 'displayedAmount': 600000.0, 'color': Colors.orange},
-    {'label': 'Education & Self-improvement', 'amount': 400000.0, 'displayedAmount': 400000.0, 'color': Colors.purple},
-    {'label': 'Other Expenses', 'amount': 200000.0, 'displayedAmount': 200000.0, 'color': Colors.red},
-    {'label': 'Saving', 'amount': 500000.0, 'displayedAmount': 500000.0, 'color': Colors.grey},
-  ];
+  // Using shared color palette from CategoryColors
 
   @override
   Widget build(BuildContext context) {
+    const List<String> customOrder =
+    [
+      "Fixed Expenses",
+      "Living Expenses",
+      "Entertainment & Personal",
+      "Education & Self-improvement",
+      "Other Expenses",
+      "Saving"
+    ];
+    final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
+    final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 15),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(width: 20),
-            const Text(
-              'Categories',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            FloatingActionButton.small(
-              onPressed: () {},
-              backgroundColor: const Color(0xff7583ca),
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          ],
+        const SizedBox(height: 10,),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Categories',
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              ),
+              FloatingActionButton.small(
+                onPressed: () {},
+                backgroundColor: const Color(0xff7583ca),
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 2),
-        ...List.generate(categories.length, (i) {
-          final cat = categories[i];
-          return CategoryItem(
-            index: i + 1,
-            label: cat['label'] as String,
-            amount: cat['amount'] as double,
-            displayedAmount: cat['displayedAmount'] as double,
-            color: cat['color'] as Color,
-            isExpanded: expandedIndex == i,
-            isPressed: pressedIndex == i,
-            onTap: () {
-              setState(() {
-                expandedIndex = expandedIndex == i ? null : i;
-              });
-            },
-            onActionPressed: () async {
-              setState(() => pressedIndex = i);
-              final result = await _showBalanceDialog(context);
-              if (mounted) {
-                setState(() => pressedIndex = null);
-                if (result != null && result['amount'] != null) {
-                  // Update the category amount and trigger animation
-                  setState(() {
-                    categories[i]['displayedAmount'] = categories[i]['amount'];
-                    categories[i]['amount'] = result['amount'] as double;
-                  });
-                }
+        const SizedBox(height: 5),
+        Builder(
+          builder: (context) {
+            if (categoriesAsync.hasError) {
+              debugPrint('ERROR: Categories error: ${categoriesAsync.error}');
+              return Center(
+                child: Column(
+                  children: [
+                    Text(
+                      'Error loading categories: ${categoriesAsync.error}',
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.refresh(expenseCategoriesNotifierProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Check balance
+            if (balanceAsync.hasError) {
+              debugPrint('ERROR: Balance error: ${balanceAsync.error}');
+              debugPrint(
+                'ERROR: Balance stackTrace: ${balanceAsync.stackTrace}',
+              );
+              return Center(
+                child: Text('Error loading balance: ${balanceAsync.error}'),
+              );
+            }
+
+            // Check if both are loaded
+            if (categoriesAsync.hasValue && balanceAsync.hasValue) {
+              debugPrint(
+                'SUCCESS: Both categories and balance loaded successfully',
+              );
+              final categories = categoriesAsync.value!;
+              final balance = balanceAsync.value!;
+              debugPrint(
+                'DEBUG: Categories count: ${categories.length}, Balance userId: ${balance.userId}',
+              );
+
+              // Filter to only show expense categories
+              final expenseCategories = categories
+                  .where((category) => category.type == CategoryType.expense)
+                  .toList()..sort((a, b) => customOrder.indexOf(a.categoryName).compareTo(
+                  customOrder.indexOf(b.categoryName)));
+              debugPrint(
+                'DEBUG: Expense categories count: ${expenseCategories.length}',
+              );
+
+              if (expenseCategories.isEmpty) {
+                debugPrint(
+                  'DEBUG: No expense categories, showing empty state',
+                );
+                return _buildEmptyState();
               }
-            },
-          );
-        }),
+
+              debugPrint(
+                'DEBUG: Building categories list with ${expenseCategories.length} categories',
+              );
+              return _buildCategoriesList(expenseCategories, balance);
+            }
+
+            // Show loading if either is still loading
+            debugPrint(
+              'DEBUG: Still loading - categories.isLoading: ${categoriesAsync.isLoading}, balance.isLoading: ${balanceAsync.isLoading}',
+            );
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
       ],
     );
   }
 
-  Future<Map<String, dynamic>?> _showBalanceDialog(BuildContext context) async {
-    final balanceController = TextEditingController();
+  Widget _buildEmptyState() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.category_outlined, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No Categories Yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Create your first expense category to start budgeting',
+            style: TextStyle(color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => _showSpendingLimitDialog(null, null),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Category'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    final result = await showCustomBottomSheet<Map<String, dynamic>>(
+  Widget _buildCategoriesList(
+      List<ExpenseCategory> categories,
+      Balance balance,
+      ) {
+    return Column(
+      children: [
+        ...categories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final category = entry.value;
+          final color = CategoryColors.getColorByIndex(index);
+
+          // Find budget for this category
+          final budget =
+          balance.budgets
+              .where((b) => b.categoryId == category.exCid)
+              .isNotEmpty
+              ? balance.budgets.firstWhere(
+                (b) => b.categoryId == category.exCid,
+          )
+              : Budget(
+            budgetId: '',
+            userId: widget.userId,
+            categoryId: category.exCid,
+            accountId: '',
+            budgetAmount: 0,
+            startDate: DateTime.now(),
+            endDate: DateTime.now(),
+          );
+
+          // Calculate spent amount for this category (mock data for now)
+          final spentAmount = budget.spentAmount; // Mock: 60% spent
+
+          return CategoryItem(
+            index: index,
+            label: category.categoryName,
+            amount: budget.budgetAmount,
+            spentAmount: spentAmount,
+            color: color,
+            isExpanded: expandedIndex == index,
+            onTap: () {
+              setState(() {
+                expandedIndex = expandedIndex == index ? null : index;
+              });
+            },
+            isPressed: false,
+            onActionPressed: () {
+              debugPrint(
+                'DEBUG: Set budget button pressed for category: ${category.exCid}',
+              );
+              _showSpendingLimitDialog(category.exCid, balance);
+            },
+            categoryId: category.exCid,
+            userId: widget.userId,
+          );
+        }),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _showAddCategoryDialog(),
+              icon: const Icon(Icons.add),
+              label: const Text('Add New Category'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddCategoryDialog() {
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    showCustomBottomSheet(
       context: context,
-      title: 'Set Spending Limit',
-      actionText: 'DONE',
-      actionColor: Color(0xff7583ca),
+      title: 'Add New Category',
+      actionText: 'CREATE',
+      actionColor: Colors.blue,
       content: Column(
         children: [
+          buildFormField(label: 'Category Name', controller: nameController),
+          const SizedBox(height: 16),
           buildFormField(
-            label: 'Amount',
-            controller: balanceController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            label: 'Description (Optional)',
+            controller: descriptionController,
           ),
         ],
       ),
       onActionPressed: () async {
-        final balanceText = balanceController.text.trim();
-        if (balanceText.isEmpty) {
+        final name = nameController.text.trim();
+        if (name.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Please fill in all fields'))
+            const SnackBar(content: Text('Please enter a category name')),
           );
           return;
         }
-        final amount = double.tryParse(balanceText);
-        if (amount == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Please enter a valid amount')),
+
+        try {
+          await ref
+              .read(expenseCategoriesNotifierProvider.notifier)
+              .createCategory(
+            categoryName: name,
+            description: descriptionController.text.trim().isEmpty
+                ? null
+                : descriptionController.text.trim(),
           );
-          return;
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Category created successfully')),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error creating category: $e')),
+          );
         }
-        Navigator.of(context).pop({'amount': amount});
       },
     );
-    return result;
   }
+
+  void _showSpendingLimitDialog([String? categoryId, Balance? balance]) {
+    debugPrint('DEBUG: _showAddExpenseDialog called with categoryId: $categoryId');
+
+    if (categoryId != null) {
+      // Find the category name and color
+      final categoriesAsync = ref.read(expenseCategoriesNotifierProvider);
+      if (categoriesAsync.hasValue) {
+        final category = categoriesAsync.value!
+            .where((c) => c.exCid == categoryId)
+            .firstOrNull;
+
+        if (category != null) {
+          final categoryIndex = categoriesAsync.value!
+              .where((c) => c.type == CategoryType.expense)
+              .toList()
+              .indexWhere((c) => c.exCid == categoryId);
+          final color = CategoryColors.getColorByIndex(categoryIndex);
+
+          showUnifiedBudgetExpenseDialog(
+            context: context,
+            categoryId: categoryId,
+            categoryName: category.categoryName,
+            categoryColor: color,
+            userId: widget.userId,
+            balance: balance,
+            initialTab: 0, // Start with budget tab
+          );
+        }
+      }
+    }
+  }
+
 }

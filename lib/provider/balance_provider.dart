@@ -11,7 +11,7 @@ class BalanceNotifier extends _$BalanceNotifier {
   Future<Balance> build(String userId) async {
     // Fetch from backend API (single call with pre-computed data)
     final service = ref.watch(balanceServiceProvider);
-    final data = await service.getCompleteBalanceData(userId);
+    final data = await service.getCompleteBalanceData();
     
     // Cache the data for offline access
     final storage = ref.watch(balanceStorageProvider);
@@ -46,7 +46,7 @@ class BalanceNotifier extends _$BalanceNotifier {
     state = const AsyncLoading();
     try {
       final service = ref.read(balanceServiceProvider);
-      final freshData = await service.getCompleteBalanceData(currentData.userId);
+      final freshData = await service.getCompleteBalanceData();
       
       // Cache the fresh data
       final storage = ref.read(balanceStorageProvider);

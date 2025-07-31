@@ -298,9 +298,9 @@ class _BalanceCardTestState extends ConsumerState<BalanceCardTest> with PressedS
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -398,7 +398,6 @@ class _BalanceCardTestState extends ConsumerState<BalanceCardTest> with PressedS
               accountName: accountName,
               balance: amount,
               currencyCode: existingAccount.currencyCode,
-              userId: existingAccount.userId,
               isDefault: existingAccount.isDefault,
             );
             await ref.read(financialAccountServiceProvider).updateAccount(updateRequest);
@@ -415,7 +414,6 @@ class _BalanceCardTestState extends ConsumerState<BalanceCardTest> with PressedS
               accountName: accountName,
               balance: amount,
               currencyCode: 'VND',
-              userId: widget.userId,
               isDefault: true,
             );
             await ref.read(financialAccountServiceProvider).createAccount(request);
