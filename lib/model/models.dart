@@ -5,3 +5,10 @@ export 'expense/expense.dart';
 export 'budget/budget.dart';
 export 'balance/balance.dart';
 export 'monthly_balance/monthly_balance.dart';
+
+// Event and Assignment models
+export 'event.dart';
+export 'assignment.dart';
+export 'event_category.dart';
+export 'subject.dart';
+export 'priority_level.dart';

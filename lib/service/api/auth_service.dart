@@ -1,24 +1,32 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'base/api_client.dart';
 import 'dto/auth_request.dart';
 import 'dto/auth_response.dart';
 import '../storage/token_storage.dart';
 
 class AuthService {
-  final Dio _dio = ApiClient().dio;
   final TokenStorage _tokenStorage = TokenStorage();
 
   Future<AuthResponse> login(AuthRequest request) async {
+    final loginDio = Dio(
+      BaseOptions(
+        baseUrl: 'http://exe202.runasp.net/',
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+      ),
+    );
+
     try {
-      final response = await _dio.post(
+      final response = await loginDio.post(
         '/api/controller/login',
-        data: request.toJson(),
+        data: jsonEncode(request.toJson()),
       );
 
       final authResponse = AuthResponse.fromJson(response.data);
-      
-      // Automatically save the token
-      await _tokenStorage.saveToken(authResponse.token);
+
+      if (authResponse.token.isNotEmpty) {
+        await _tokenStorage.saveToken(authResponse.token);
+      }
       
       return authResponse;
     } on DioException catch (e) {
