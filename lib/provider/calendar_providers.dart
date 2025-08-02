@@ -5,6 +5,7 @@ import '../model/assignment.dart';
 import '../model/event.dart';
 import '../model/event_category.dart';
 import '../model/subject.dart';
+import '../model/priority_level.dart';
 import 'service_providers.dart';
 
 part 'calendar_providers.g.dart';
@@ -64,13 +65,28 @@ Future<List<Assignment>> monthAssignments(MonthAssignmentsRef ref) async {
 // Provider for all events (used in management view)
 @riverpod
 Future<List<Event>> events(EventsRef ref) async {
-  return ref.watch(eventServiceProvider).getAll();
+  final events = await ref.watch(eventServiceProvider).getAll();
+  final categories = await ref.watch(eventCategoriesProvider.future);
+  final catMap = {for (final c in categories) c.evCategoryId!: c.categoryName};
+  return events
+      .map((e) => e.copyWith(categoryName: e.categoryName ?? catMap[e.evCategoryId]))
+      .toList();
 }
 
 // Provider for all assignments (used in management view)
 @riverpod
 Future<List<Assignment>> assignments(AssignmentsRef ref) async {
-  return ref.watch(assignmentServiceProvider).getAll();
+  final items = await ref.watch(assignmentServiceProvider).getAll();
+  final subjects = await ref.watch(subjectsProvider.future);
+  final priorities = await ref.watch(prioritiesProvider.future);
+  final subjMap = {for (final s in subjects) s.subjectId!: s.subjectName};
+  final priMap = {for (final p in priorities) p.priorityId!: p.levelName};
+  return items
+      .map((a) => a.copyWith(
+            subjectName: a.subjectName ?? subjMap[a.subjectId],
+            priorityName: a.priorityName ?? priMap[a.priorityId],
+          ))
+      .toList();
 }
 
 // Provider for all event categories
@@ -83,6 +99,12 @@ Future<List<EventCategory>> eventCategories(EventCategoriesRef ref) async {
 @riverpod
 Future<List<Subject>> subjects(SubjectsRef ref) async {
   return ref.watch(subjectServiceProvider).getAll();
+}
+
+// Provider for priorities (readonly)
+@riverpod
+Future<List<PriorityLevel>> priorities(PrioritiesRef ref) async {
+  return ref.watch(priorityLevelServiceProvider).getAll();
 }
 
 // Provider for the selected day

@@ -4,6 +4,8 @@ import '../service/api/assignment_service.dart';
 import '../service/api/event_category_service.dart';
 import '../service/api/event_service.dart';
 import '../service/api/subject_service.dart';
+import '../service/api/priority_level_service.dart';
+import '../service/api/ai_service.dart';
 import '../service/financial/services.dart';
 import '../service/storage/balance_storage.dart';
 
@@ -64,4 +66,14 @@ EventCategoryService eventCategoryService(Ref ref) {
 @riverpod
 SubjectService subjectService(Ref ref) {
   return SubjectService();
+}
+
+@riverpod
+PriorityLevelService priorityLevelService(Ref ref) {
+  return PriorityLevelService();
+}
+
+@riverpod
+AIServiceApi aiService(Ref ref) {
+  return AIServiceApi();
 }

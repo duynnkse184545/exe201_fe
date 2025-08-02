@@ -3,7 +3,7 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import '../shared/management_view.dart';
 import '../shared/categories_subjects_management_view.dart';
 import '../calendar/calendar_theme.dart';
-import '../add_edit/add_edit_view.dart';
+import 'ai_create_dialog.dart';
 
 class SpeedDialMenu extends StatelessWidget {
   const SpeedDialMenu({super.key});
@@ -58,15 +58,18 @@ class SpeedDialMenu extends StatelessWidget {
           },
         ),
         SpeedDialChild(
-          child: const Icon(Icons.add_task),
+          child: const Icon(Icons.auto_awesome),
           backgroundColor: CalendarTheme.accentColor,
-          label: 'Add/Edit',
+          label: 'AI Create',
           labelStyle: const TextStyle(fontSize: 18.0),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddEditView()),
+          onTap: () async {
+            final updated = await showDialog<bool>(
+              context: context,
+              builder: (_) => const AICreateDialog(),
             );
+            if (updated == true) {
+              // No history; just refresh screens when returning to lists if needed.
+            }
           },
         ),
       ],
