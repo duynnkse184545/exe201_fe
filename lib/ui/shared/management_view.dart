@@ -84,7 +84,15 @@ class _ManagementViewState extends ConsumerState<ManagementView> with TickerProv
                         subtitle: '${item.categoryName ?? ''} • ${_fmtFull(item.startDateTime)} - ${_fmtFull(item.endDateTime)}',
                         details: EventDetailCard(event: item),
                         onEdit: () async {
-                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEditView()));
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => AddEditView(eventData: {
+                            'eventId': item.eventId,
+                            'title': item.title,
+                            'description': item.description,
+                            'startDateTime': item.startDateTime.toIso8601String(),
+                            'endDateTime': item.endDateTime.toIso8601String(),
+                            'recurrencePattern': item.recurrencePattern,
+                            'evCategoryId': item.evCategoryId,
+                          })));
                           if (!mounted) return;
                           ref.invalidate(eventsProvider);
                         },
@@ -118,7 +126,14 @@ class _ManagementViewState extends ConsumerState<ManagementView> with TickerProv
                         subtitle: '${item.subjectName ?? ''} • ${item.priorityName ?? ''} • ${_fmtFull(item.dueDate)}',
                         details: AssignmentDetailCard(assignment: item),
                         onEdit: () async {
-                          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEditView()));
+                          await Navigator.push(context, MaterialPageRoute(builder: (_) => AddEditView(assignmentData: {
+                            'assignmentId': item.assignmentId,
+                            'title': item.title,
+                            'description': item.description,
+                            'dueDate': item.dueDate.toIso8601String(),
+                            'priorityId': item.priorityId,
+                            'subjectId': item.subjectId,
+                          })));
                           if (!mounted) return;
                           ref.invalidate(assignmentsProvider);
                         },

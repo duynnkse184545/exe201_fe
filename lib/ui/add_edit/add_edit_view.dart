@@ -1,3 +1,4 @@
+import 'package:exe201/ui/test/balance_card_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../calendar/calendar_theme.dart';
@@ -5,7 +6,9 @@ import '../../provider/calendar_providers.dart';
 import '../../provider/service_providers.dart';
 
 class AddEditView extends ConsumerStatefulWidget {
-  const AddEditView({super.key});
+  final Map<String, dynamic>? eventData;
+  final Map<String, dynamic>? assignmentData;
+  const AddEditView({super.key, this.eventData, this.assignmentData});
 
   @override
   ConsumerState<AddEditView> createState() => _AddEditViewState();
@@ -34,9 +37,34 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (mounted) setState(() {});
-    });
+    _tabController.addListener(() { if (mounted) setState(() {}); });
+
+    if (widget.eventData != null) {
+      final e = widget.eventData!;
+      _tabController.index = 0;
+      _eventTitle.text = e['title'] ?? '';
+      _eventDesc.text = e['description'] ?? '';
+      final sd = DateTime.parse(e['startDateTime'] as String);
+      final ed = DateTime.parse(e['endDateTime'] as String);
+      _eventStartDate.text = _fmtDate(sd);
+      _eventStartTime.text = _fmtTime(sd);
+      _eventEndDate.text = _fmtDate(ed);
+      _eventEndTime.text = _fmtTime(ed);
+      _selectedCategoryId = e['evCategoryId'] as String?;
+      _selectedRecurrence = (e['recurrencePattern'] ?? 'none').toString().capitalize();
+    }
+
+    if (widget.assignmentData != null) {
+      final a = widget.assignmentData!;
+      _tabController.index = 1;
+      _assTitle.text = a['title'] ?? '';
+      _assDesc.text = a['description'] ?? '';
+      final due = DateTime.parse(a['dueDate'] as String);
+      _assDueDate.text = _fmtDate(due);
+      _assDueTime.text = _fmtTime(due);
+      _selectedSubjectId = a['subjectId'] as String?;
+      _selectedPriorityId = a['priorityId'] as int?;
+    }
   }
 
   @override
@@ -166,6 +194,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
                   decoration: const InputDecoration(labelText: 'Category'),
                   items: categories.map((c) => DropdownMenuItem(value: c.evCategoryId, child: Text(c.categoryName))).toList(),
                   onChanged: (v) { _selectedCategoryId = v; },
+                  value: _selectedCategoryId,
                 ),
                 loading: () => const CircularProgressIndicator(),
                 error: (e, _) => Text('Error: $e'),
@@ -217,6 +246,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
                   decoration: const InputDecoration(labelText: 'Subject'),
                   items: subjects.map((s) => DropdownMenuItem(value: s.subjectId, child: Text(s.subjectName))).toList(),
                   onChanged: (v) { _selectedSubjectId = v; },
+                  value: _selectedSubjectId,
                 ),
                 loading: () => const CircularProgressIndicator(),
                 error: (e, _) => Text('Error: $e'),
@@ -232,6 +262,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
                   decoration: const InputDecoration(labelText: 'Priority'),
                   items: priorities.map((p) => DropdownMenuItem(value: p.priorityId!, child: Text(p.levelName ?? ''))).toList(),
                   onChanged: (v) { _selectedPriorityId = v; },
+                  value: _selectedPriorityId,
                 ),
                 loading: () => const CircularProgressIndicator(),
                 error: (e, _) => Text('Error: $e'),
@@ -247,7 +278,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
   int? _selectedPriorityId;
   String? _selectedCategoryId;
 
-  Future<void> _submitEvent() async {
+  Future<void> _submitEvent() async { final isEdit = widget.eventData != null;
     try {
       final start = _parseDateTime(_eventStartDate.text, _eventStartTime.text);
       final end = _parseDateTime(_eventEndDate.text, _eventEndTime.text);
@@ -261,12 +292,20 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
         'recurrenceEndDate': recEnd?.toIso8601String().split('T').first,
         'evCategoryId': _selectedCategoryId,
       };
-      debugPrint('Event create req: $payload');
-      final created = await ref.read(eventServiceProvider).create<Map<String, dynamic>>(payload);
-      debugPrint('Event create resp: ${created.toJson()}');
+      if (isEdit) {
+        final id = widget.eventData!['eventId'];
+        final body = Map<String, dynamic>.from(payload)..['eventId'] = id;
+        if (body['recurrenceEndDate'] == null) { body.remove('recurrenceEndDate'); }
+        debugPrint('Event update req: $body');
+        await ref.read(eventServiceProvider).updateEvent(body);
+      } else {
+        debugPrint('Event create req: $payload');
+        await ref.read(eventServiceProvider).create<Map<String, dynamic>>(payload);
+      }
       ref.invalidate(eventsProvider);
+      ref.invalidate(monthEventsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Event created')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Event updated' : 'Event created')));
       Navigator.pop(context);
     } catch (e) {
       debugPrint('Event submit error: $e');
@@ -275,23 +314,31 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
     }
   }
 
-  Future<void> _submitAssignment() async {
+  Future<void> _submitAssignment() async { final isEdit = widget.assignmentData != null;
     try {
       final due = _parseDateTime(_assDueDate.text, _assDueTime.text);
       final payload = {
         'title': _assTitle.text,
         'description': _assDesc.text,
         'dueDate': due.toIso8601String(),
+        'status': widget.assignmentData?['status'] ?? 'in_progress',
         'subjectId': _selectedSubjectId,
         'priorityId': _selectedPriorityId,
         'estimatedTime': 0,
       };
-      debugPrint('Assignment create req: $payload');
-      final created = await ref.read(assignmentServiceProvider).create<Map<String, dynamic>>(payload);
-      debugPrint('Assignment create resp: ${created.toJson()}');
+      if (isEdit) {
+        final id = widget.assignmentData!['assignmentId'];
+        final body = Map<String, dynamic>.from(payload)..['assignmentId'] = id;
+        debugPrint('Assignment update req: $body');
+        await ref.read(assignmentServiceProvider).updateAssignment(body);
+      } else {
+        debugPrint('Assignment create req: $payload');
+        await ref.read(assignmentServiceProvider).create<Map<String, dynamic>>(payload);
+      }
       ref.invalidate(assignmentsProvider);
+      ref.invalidate(monthAssignmentsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Assignment created')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isEdit ? 'Assignment updated' : 'Assignment created')));
       Navigator.pop(context);
     } catch (e) {
       debugPrint('Assignment submit error: $e');
@@ -299,6 +346,9 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add assignment: $e')));
     }
   }
+
+  String _fmtDate(DateTime d){return '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';}
+  String _fmtTime(DateTime d){return '${d.hour.toString().padLeft(2,'0')}:${d.minute.toString().padLeft(2,'0')}';}
 
   DateTime _parseDateTime(String d, String t) {
     final parts = d.split('/');
