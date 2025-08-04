@@ -137,7 +137,6 @@ class CurrentMonthlyBalanceNotifier extends _$CurrentMonthlyBalanceNotifier {
                   categoryId: budget.categoryId,
                   accountId: budget.accountId,
                   budgetAmount: budget.budgetAmount,
-                  userId: budget.userId,
                   isLocked: budget.isLocked,
                 ))
             .toList(),

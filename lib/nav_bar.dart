@@ -4,7 +4,7 @@ import 'package:exe201/ui/community/community.dart';
 import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../home/home.dart';
+import 'ui/home/home.dart';
 
 class BottomTab extends StatefulWidget {
   const BottomTab({super.key});

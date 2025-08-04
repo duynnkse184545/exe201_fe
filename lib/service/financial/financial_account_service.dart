@@ -54,7 +54,7 @@ class FinancialAccountService extends ApiService<FinancialAccount, String> {
       if (updates.accountId == null) {
         throw ArgumentError('accountId is required for update operations');
       }
-      return await updateById<FinancialAccountRequest>(updates.accountId!, updates);
+      return await update<FinancialAccountRequest>(updates);
     } catch (e) {
       throw Exception('Failed to update account: $e');
     }
@@ -67,7 +67,6 @@ class FinancialAccountService extends ApiService<FinancialAccount, String> {
         accountId: accountId,
         accountName: accountName,
         balance: newBalance,
-        userId: userId,
       );
       return await updateAccount(request);
     } catch (e) {
@@ -87,7 +86,6 @@ class FinancialAccountService extends ApiService<FinancialAccount, String> {
             accountName: account.accountName,
             balance: account.balance,
             currencyCode: account.currencyCode,
-            userId: account.userId,
             isDefault: false,
           );
           await updateAccount(request);
@@ -101,7 +99,6 @@ class FinancialAccountService extends ApiService<FinancialAccount, String> {
         accountName: targetAccount.accountName,
         balance: targetAccount.balance,
         currencyCode: targetAccount.currencyCode,
-        userId: targetAccount.userId,
         isDefault: true,
       );
       return await updateAccount(request);
@@ -129,7 +126,6 @@ class FinancialAccountService extends ApiService<FinancialAccount, String> {
       final request = FinancialAccountRequest(
         accountName: 'Main Account',
         balance: initialBalance,
-        userId: userId,
         isDefault: true,
       );
       return await createAccount(request);

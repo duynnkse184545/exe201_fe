@@ -66,7 +66,7 @@ class _MonthSliderState extends State<MonthSlider> {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.zero,
-      decoration: const BoxDecoration(color: Color(0xff7583ca)),
+      decoration: BoxDecoration(color: Theme.of(context).primaryColor),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -98,9 +98,9 @@ class _MonthSliderState extends State<MonthSlider> {
                         minimumSize: Size(105, 40),
                         backgroundColor: isSelected
                             ? Colors.white
-                            : const Color(0xff7583ca).withValues(alpha: 1.2),
+                            : Theme.of(context).primaryColor.withValues(alpha: 1.2),
                         foregroundColor: isSelected
-                            ? const Color(0xff7583ca)
+                            ? Theme.of(context).primaryColor
                             : Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

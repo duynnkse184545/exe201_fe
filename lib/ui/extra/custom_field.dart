@@ -9,7 +9,8 @@ Widget buildFormField({
   String? errorText,
   Animation<double>? animation,
   TextInputType? keyboardType,
-  bool? isValid ,
+  bool? isValid,
+  bool? enabled,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -18,6 +19,7 @@ Widget buildFormField({
         animation: animation,
         child: TextFormField(
           controller: controller,
+          enabled: enabled ?? true,
           obscureText: obscureText ?? false,
           decoration: InputDecoration(
             labelText: label,
