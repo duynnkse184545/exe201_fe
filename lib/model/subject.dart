@@ -1,27 +1,17 @@
-class Subject {
-  String subjectId;
-  String subjectName;
-  String? description;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  Subject({
-    required this.subjectId,
-    required this.subjectName,
-    this.description,
-  });
+part 'subject.freezed.dart';
+part 'subject.g.dart';
 
-  factory Subject.fromJson(Map<String, dynamic> json) {
-    return Subject(
-      subjectId: json['subjectId'],
-      subjectName: json['subjectName'],
-      description: json['description'],
-    );
-  }
+@freezed
+abstract class Subject with _$Subject {
+  const factory Subject({
+    required String subjectId,
+    required String subjectName,
+    String? description,
+    required String userId,
+  }) = _Subject;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'subjectId': subjectId,
-      'subjectName': subjectName,
-      'description': description,
-    };
-  }
+  factory Subject.fromJson(Map<String, dynamic> json) =>
+      _$SubjectFromJson(json);
 }

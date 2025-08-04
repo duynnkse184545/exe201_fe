@@ -1,6 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+class Header extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  
+  const Header({Key? key, required this.title}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(title),
+      backgroundColor: const Color(0xFF9B5DE5), // Using CalendarTheme.primaryColor value
+    );
+  }
+  
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
 Widget buildHeader(Color color, bool greeting) {
   final now = DateTime.now();
   final dayOfWeek = DateFormat('EEEE').format(now);

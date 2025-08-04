@@ -1,0 +1,134 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../provider/service_providers.dart';
+import '../calendar/calendar_theme.dart';
+
+class AICreateDialog extends ConsumerStatefulWidget {
+  const AICreateDialog({super.key});
+
+  @override
+  ConsumerState<AICreateDialog> createState() => _AICreateDialogState();
+}
+
+class _AICreateDialogState extends ConsumerState<AICreateDialog> {
+  final _prompt = TextEditingController();
+  bool _loading = false;
+  List<Map<String, dynamic>> _options = [];
+  String? _conversationId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('AI Create', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _prompt,
+                decoration: InputDecoration(
+                  hintText: 'Describe what you want to create...',
+                  prefixIcon: const Icon(Icons.chat_bubble_outline),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onSubmitted: (_) => _generate(),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Generate'),
+                  onPressed: _loading ? null : _generate,
+                  style: ElevatedButton.styleFrom(backgroundColor: CalendarTheme.secondaryColor, foregroundColor: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _options.isEmpty
+                        ? const Center(child: Text('Enter a prompt and tap Generate'))
+                        : ListView.separated(
+                            itemCount: _options.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, i) {
+                              final o = _options[i]['option'] as Map<String, dynamic>;
+                              final type = (o['type'] as String).toLowerCase();
+                              return Card(
+                                elevation: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(color: type == 'assignment' ? Colors.blue : Colors.green, borderRadius: BorderRadius.circular(12)),
+                                          child: Text(type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                        ),
+                                        const Spacer(),
+                                        Text('${o['estimatedTimeMinutes']} min', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                      ]),
+                                      const SizedBox(height: 8),
+                                      Text(o['title'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 6),
+                                      if ((o['description'] ?? '').toString().isNotEmpty) Text(o['description']),
+                                      const SizedBox(height: 10),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () => _create(o),
+                                          style: ElevatedButton.styleFrom(backgroundColor: type == 'assignment' ? Colors.blue : Colors.green, foregroundColor: Colors.white),
+                                          child: Text('Create $type'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generate() async {
+    final msg = _prompt.text.trim();
+    if (msg.isEmpty) return;
+    setState(() { _loading = true; _options = []; });
+    try {
+      final resp = await ref.read(aiServiceProvider).generateOptions(msg);
+      final list = (resp['options'] as List).cast<Map<String, dynamic>>();
+      setState(() { _options = list; _conversationId = resp['conversationId'] as String?; });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Generate failed: $e')));
+    } finally {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  Future<void> _create(Map<String, dynamic> option) async {
+    try {
+      final result = await ref.read(aiServiceProvider).createSelected(option, conversationId: _conversationId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Created')));
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Create failed: $e')));
+    }
+  }
+}

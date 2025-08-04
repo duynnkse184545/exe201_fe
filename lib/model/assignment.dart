@@ -1,55 +1,26 @@
-class Assignment{
-  final String? assignmentId;
-  final String? title;
-  final String? description;
-  final DateTime? dueDate;
-  final DateTime? completedDate;
-  final String? status;
-  final int priorityId;
-  final int? estimatedTime;
-  final String? subjectId;
-  final String? userId;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  Assignment({
-    this.assignmentId,
-    required this.title,
-    required this.description,
-    this.dueDate,
-    this.completedDate,
-    required this.status,
-    required this.priorityId,
-    this.estimatedTime,
-    this.subjectId,
-    this.userId,
-  });
+part 'assignment.freezed.dart';
+part 'assignment.g.dart';
 
-  factory Assignment.fromJson(Map<String, dynamic> json) {
-    return Assignment(
-      assignmentId: json['assignmentId'],
-      title: json['title'],
-      description: json['description'],
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
-      completedDate: json['completedDate'] != null ? DateTime.parse(json['completedDate']) : null,
-      status: json['status'],
-      priorityId: json['priorityId'],
-      estimatedTime: json['estimatedTime'],
-      subjectId: json['subjectId'],
-      userId: json['userId'],
-    );
-  }
+@freezed
+abstract class Assignment with _$Assignment {
+  const factory Assignment({
+    required String assignmentId,
+    required String title,
+    String? description,
+    required DateTime dueDate,
+    DateTime? completedDate,
+    required String status,
+    required int priorityId,
+    String? priorityName,
+    String? priorityColorCode,
+    int? estimatedTime,
+    required String subjectId,
+    String? subjectName,
+    required String userId,
+  }) = _Assignment;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'assignmentId': assignmentId,
-      'title': title,
-      'description': description,
-      'dueDate': dueDate?.toIso8601String(),
-      'completedDate': completedDate?.toIso8601String(),
-      'status': status,
-      'priorityId': priorityId,
-      'estimatedTime': estimatedTime,
-      'subjectId': subjectId,
-      'userId': userId,
-    };
-  }
+  factory Assignment.fromJson(Map<String, dynamic> json) =>
+      _$AssignmentFromJson(json);
 }

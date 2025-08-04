@@ -1,27 +1,17 @@
-class EventCategory {
-  final String? evCategoryId;
-  final String? categoryName;
-  final String? description;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  EventCategory({
-    this.evCategoryId,
-    required this.categoryName,
-    this.description,
-  });
+part 'event_category.freezed.dart';
+part 'event_category.g.dart';
 
-  factory EventCategory.fromJson(Map<String, dynamic> json) {
-    return EventCategory(
-      evCategoryId: json['evCategoryId'],
-      categoryName: json['categoryName'],
-      description: json['description'],
-    );
-  }
+@freezed
+abstract class EventCategory with _$EventCategory {
+  const factory EventCategory({
+    required String evCategoryId,
+    required String categoryName,
+    String? description,
+    required String userId,
+  }) = _EventCategory;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'evCategoryId': evCategoryId,
-      'categoryName': categoryName,
-      'description': description,
-    };
-  }
+  factory EventCategory.fromJson(Map<String, dynamic> json) =>
+      _$EventCategoryFromJson(json);
 }
