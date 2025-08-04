@@ -116,7 +116,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           icon: Icon(Icons.arrow_circle_left_outlined, size: 40, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Color(0xff7583ca),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24),
@@ -180,7 +180,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             ElevatedButton(
               onPressed: _isLoading ? null : _signUp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -242,7 +242,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   child: Text(
                     'Sign in',
                     style: TextStyle(
-                      color: Color(0xff7583ca),
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

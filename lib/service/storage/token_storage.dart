@@ -15,7 +15,7 @@ class TokenStorage {
   Future<String?> getToken() async {
     // First try to get stored token
     final storedToken = await _storage.read(key: _keyToken);
-    // If no stored token, use development token for testing
+    print(storedToken);
     if (storedToken == null) {
       // Automatically save the development token for future use
       await saveToken(_developmentToken);

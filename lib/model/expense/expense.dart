@@ -6,11 +6,11 @@ part 'expense.g.dart';
 @freezed
 abstract class Expense with _$Expense {
   const factory Expense({
-    required String expenseId,
+    required String expensesId,
     required double amount,
     String? description,
     required DateTime createdDate,
-    required String categoryId,
+    required String exCid,
     required String accountId,
     required String userId,
     String? categoryName,
@@ -24,12 +24,11 @@ abstract class Expense with _$Expense {
 @freezed
 abstract class ExpenseRequest with _$ExpenseRequest {
   const factory ExpenseRequest({
-    String? expenseId,
+    String? expensesId,
     required double amount,
     String? description,
-    required String categoryId,
+    required String exCid,
     required String accountId,
-    required String userId,
   }) = _ExpenseRequest;
 
   factory ExpenseRequest.fromJson(Map<String, dynamic> json) =>

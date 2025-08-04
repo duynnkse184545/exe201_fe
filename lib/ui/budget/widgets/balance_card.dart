@@ -5,6 +5,7 @@ import '../../../model/models.dart';
 import '../../../provider/providers.dart';
 import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
+import '../../extra/header.dart';
 
 
 extension StringExtension on String {
@@ -42,9 +43,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       loading: () => _buildLoadingCard(),
       error: (error, stack) => _buildErrorCard(error.toString()),
       data: (balance) {
-        // Use accounts from balance provider (cached data)
-        final accounts = balance.accounts;
-        return _buildBalanceCard(balance, accounts);
+        return _buildBalanceCard(balance);
       },
     );
   }
@@ -109,10 +108,9 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
     );
   }
 
-  Widget _buildBalanceCard(Balance balance, List<FinancialAccount> accounts) {
+  Widget _buildBalanceCard(Balance balance) {
     // Get the actual account balance from provider data
-    final currentAccount = accounts.isNotEmpty ? accounts.first : null;
-    final actualBalance = currentAccount?.balance ?? balance.availableBalance;
+    final actualBalance = balance.availableBalance;
     // Update animation targets when data changes
     if (_targetBalance != actualBalance) {
       _displayedBalance = _targetBalance;
@@ -122,19 +120,19 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
     final List<Map<String, dynamic>> balanceItems = [
       {
         "title": "Available balance",
-        "amount": _formatCurrency(actualBalance),
+        "amount": formatCurrency(actualBalance),
         "action": () => _showBalanceDialog(context),
         "isAnimated": true, // Mark this for animation
       },
       {
         "title": "Income",
-        "amount": _formatCurrency(balance.monthlyIncome),
+        "amount": formatCurrency(balance.monthlyIncome),
         "action": () async => debugPrint("Tapped: income"),
         "isAnimated": false,
       },
       {
         "title": "Expenses",
-        "amount": _formatCurrency(balance.monthlyExpenses),
+        "amount": formatCurrency(balance.monthlyExpenses),
         "action": () async => debugPrint("Tapped: expenses"),
         "isAnimated": false,
       },
@@ -201,7 +199,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
                               },
                               builder: (context, value, child) {
                                 return Text(
-                                  _formatCurrency(value),
+                                  formatCurrency(value),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 30,
@@ -242,13 +240,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       ),
     );
   }
-
-  String _formatCurrency(double value) {
-    return '${value
-        .toStringAsFixed(0)
-        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (match) => '${match[1]}.')} ₫';
-  }
+  
 
   Future<Map<String, dynamic>?> _showBalanceDialog(BuildContext context) async {
     final amountController = TextEditingController();
@@ -258,7 +250,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       context: context,
       title: 'Financial Account',
       actionText: 'SAVE',
-      actionColor: const Color(0xff7583ca),
+      actionColor: Theme.of(context).primaryColor,
       content: Consumer(
         builder: (context, ref, child) {
           // Use balance provider data instead of separate accounts provider

@@ -374,7 +374,7 @@ class _CalendarTabState extends State<CalendarTab> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddDeadlineDialog,
-        backgroundColor: const Color(0xff7583ca),
+        backgroundColor: Theme.of(context).primaryColor,
         shape: CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white),
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Category data structure combining color and icon
 class CategoryStyle {
   final Color color;
   final String icon;
@@ -65,16 +64,4 @@ class CategoryColors {
   static String getIconByIndex(int index) {
     return palette[index % palette.length].icon;
   }
-
-  /// Get both color and icon by index (returns record)
-  static ({Color color, String icon}) getColorAndIconByIndex(int index) {
-    final style = palette[index % palette.length];
-    return (color: style.color, icon: style.icon);
-  }
-
-  /// Get all available colors
-  static List<Color> get availableColors => palette.map((s) => s.color).toList();
-
-  /// Get all available icons
-  static List<String> get availableIcons => palette.map((s) => s.icon).toList();
 }

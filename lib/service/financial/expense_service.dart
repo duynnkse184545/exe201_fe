@@ -44,7 +44,7 @@ class ExpenseService extends ApiService<Expense, String> {
   Future<List<Expense>> getExpensesByCategory(String categoryId, String userId) async {
     try {
       final userExpenses = await getUserExpenses(userId);
-      return userExpenses.where((expense) => expense.categoryId == categoryId).toList();
+      return userExpenses.where((expense) => expense.exCid == categoryId).toList();
     } catch (e) {
       throw Exception('Failed to get expenses by category: $e');
     }
@@ -78,10 +78,10 @@ class ExpenseService extends ApiService<Expense, String> {
   // Update expense (inherited method with domain-specific wrapper)
   Future<Expense> updateExpense(ExpenseRequest updates) async {
     try {
-      if (updates.expenseId == null) {
+      if (updates.expensesId == null) {
         throw ArgumentError('expensesId is required for update operations');
       }
-      return await updateById<ExpenseRequest>(updates.expenseId!, updates);
+      return await updateById<ExpenseRequest>(updates.expensesId!, updates);
     } catch (e) {
       throw Exception('Failed to update expense: $e');
     }

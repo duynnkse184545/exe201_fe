@@ -39,7 +39,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
           icon: Icon(Icons.arrow_circle_left_outlined, size: 40, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Color(0xff7583ca),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24),
@@ -80,7 +80,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
             ElevatedButton(
               onPressed: _isLoading ? null : _resetPassword,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -103,7 +103,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
               child: Text(
                 'Back to Sign in',
                 style: TextStyle(
-                  color: Color(0xff7583ca),
+                  color: Theme.of(context).primaryColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),

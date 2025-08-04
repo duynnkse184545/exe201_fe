@@ -1,4 +1,4 @@
-import 'package:exe201/ui/extra/nav_bar.dart';
+import 'package:exe201/nav_bar.dart';
 import 'package:exe201/service/api/auth_service.dart';
 import 'package:flutter/material.dart';
 
@@ -116,7 +116,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ElevatedButton(
               onPressed: _isLoading ? null : _login,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -191,7 +191,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   child: Text(
                     'Sign up',
                     style: TextStyle(
-                      color: Color(0xff7583ca),
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

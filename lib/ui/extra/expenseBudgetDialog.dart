@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../provider/providers.dart';
 import '../../model/models.dart';
-import '../extra/custom_dialog.dart';
-import '../extra/custom_field.dart';
+import 'custom_dialog.dart';
+import 'custom_field.dart';
 
 class UnifiedBudgetExpenseDialog extends ConsumerStatefulWidget {
   final String categoryId;
@@ -439,9 +439,8 @@ class _UnifiedBudgetExpenseDialogState
         description: _expenseDescriptionController.text.trim().isEmpty
             ? null
             : _expenseDescriptionController.text.trim(),
-        categoryId: widget.categoryId,
+        exCid: widget.categoryId,
         accountId: defaultAccount.accountId,
-        userId: widget.userId,
       );
 
       await ref.read(expenseServiceProvider).createExpense(expenseRequest);

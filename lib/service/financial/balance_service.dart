@@ -19,7 +19,7 @@ class BalanceService extends ApiService<Balance, String> {
     throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
-  // Get complete balance data from backend
+  // Get complete balance data from backend including recent transactions
   Future<Balance> getCompleteBalanceData() async {
     try {
       final response = await dio.get('$endpoint/complete-balance');
@@ -65,7 +65,7 @@ class BalanceService extends ApiService<Balance, String> {
 
   // Filter transactions by category (client-side filtering)
   List<Expense> filterTransactionsByCategory(List<Expense> transactions, String categoryId) {
-    return transactions.where((transaction) => transaction.categoryId == categoryId).toList();
+    return transactions.where((transaction) => transaction.exCid == categoryId).toList();
   }
 
   // Get budget health (backend computed)

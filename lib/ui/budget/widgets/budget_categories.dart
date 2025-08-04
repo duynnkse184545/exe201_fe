@@ -5,7 +5,8 @@ import '../../../provider/providers.dart';
 import '../../../model/models.dart';
 import '../../extra/custom_field.dart';
 import '../../extra/category_colors.dart';
-import '../../test/demo.dart';
+import '../../extra/expenseBudgetDialog.dart';
+import '../../extra/header.dart';
 
 class CategoryItem extends StatelessWidget {
   final int index;
@@ -19,7 +20,6 @@ class CategoryItem extends StatelessWidget {
   final VoidCallback onActionPressed;
   final String categoryId;
   final String userId;
-
 
   const CategoryItem({
     super.key,
@@ -35,13 +35,6 @@ class CategoryItem extends StatelessWidget {
     required this.categoryId,
     required this.userId,
   });
-
-  String _formatCurrency(double value) {
-    return '${value
-        .toStringAsFixed(0)
-        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (match) => '${match[1]}.')}₫';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +75,7 @@ class CategoryItem extends StatelessWidget {
                           children: [
                             const Text('Initial value:'),
                             Text(
-                              _formatCurrency(amount),
+                              formatCurrency(amount),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -95,7 +88,7 @@ class CategoryItem extends StatelessWidget {
                           children: [
                             const Text('Spent:'),
                             Text(
-                              _formatCurrency(spentAmount),
+                              formatCurrency(spentAmount),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: spentAmount > amount
@@ -141,12 +134,12 @@ class CategoryItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: isExpanded
                     ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 7),
-                  ),
-                ]
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 7),
+                        ),
+                      ]
                     : null,
               ),
               child: GestureDetector(
@@ -181,9 +174,7 @@ class CategoryItem extends StatelessWidget {
                         alignment: Alignment.center,
                         child: Text(
                           CategoryColors.getIconByIndex(index),
-                          style: const TextStyle(
-                            fontSize: 16,
-                          ),
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -206,7 +197,7 @@ class CategoryItem extends StatelessWidget {
                         ),
                         builder: (context, value, child) {
                           return Text(
-                            _formatCurrency(value),
+                            formatCurrency(value),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -219,13 +210,13 @@ class CategoryItem extends StatelessWidget {
                             ? Icons.keyboard_arrow_up
                             : Icons.keyboard_arrow_down,
                         color: Colors.black,
-                      )
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -234,6 +225,7 @@ class CategoryItem extends StatelessWidget {
 
 class CategoriesSection extends ConsumerStatefulWidget {
   final String userId;
+
   const CategoriesSection({super.key, required this.userId});
 
   @override
@@ -249,14 +241,13 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
-    const List<String> customOrder =
-    [
+    const List<String> customOrder = [
       "Fixed Expenses",
       "Living Expenses",
       "Entertainment & Personal",
       "Education & Self-improvement",
       "Other Expenses",
-      "Saving"
+      "Saving",
     ];
     final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
     final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
@@ -264,7 +255,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10,),
+        const SizedBox(height: 10),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Row(
@@ -276,7 +267,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               ),
               FloatingActionButton.small(
                 onPressed: () {},
-                backgroundColor: const Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 child: const Icon(Icons.add, color: Colors.white),
               ),
             ],
@@ -290,9 +281,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               return Center(
                 child: Column(
                   children: [
-                    Text(
-                      'Error loading categories: ${categoriesAsync.error}',
-                    ),
+                    Text('Error loading categories: ${categoriesAsync.error}'),
                     ElevatedButton(
                       onPressed: () =>
                           ref.refresh(expenseCategoriesNotifierProvider),
@@ -326,18 +315,23 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               );
 
               // Filter to only show expense categories
-              final expenseCategories = categories
-                  .where((category) => category.type == CategoryType.expense)
-                  .toList()..sort((a, b) => customOrder.indexOf(a.categoryName).compareTo(
-                  customOrder.indexOf(b.categoryName)));
+              final expenseCategories =
+                  categories
+                      .where(
+                        (category) => category.type == CategoryType.expense,
+                      )
+                      .toList()
+                    ..sort(
+                      (a, b) => customOrder
+                          .indexOf(a.categoryName)
+                          .compareTo(customOrder.indexOf(b.categoryName)),
+                    );
               debugPrint(
                 'DEBUG: Expense categories count: ${expenseCategories.length}',
               );
 
               if (expenseCategories.isEmpty) {
-                debugPrint(
-                  'DEBUG: No expense categories, showing empty state',
-                );
+                debugPrint('DEBUG: No expense categories, showing empty state');
                 return _buildEmptyState();
               }
 
@@ -403,9 +397,9 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
   }
 
   Widget _buildCategoriesList(
-      List<ExpenseCategory> categories,
-      Balance balance,
-      ) {
+    List<ExpenseCategory> categories,
+    Balance balance,
+  ) {
     return Column(
       children: [
         ...categories.asMap().entries.map((entry) {
@@ -415,21 +409,21 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
 
           // Find budget for this category
           final budget =
-          balance.budgets
-              .where((b) => b.categoryId == category.exCid)
-              .isNotEmpty
+              balance.budgets
+                  .where((b) => b.categoryId == category.exCid)
+                  .isNotEmpty
               ? balance.budgets.firstWhere(
-                (b) => b.categoryId == category.exCid,
-          )
+                  (b) => b.categoryId == category.exCid,
+                )
               : Budget(
-            budgetId: '',
-            userId: widget.userId,
-            categoryId: category.exCid,
-            accountId: '',
-            budgetAmount: 0,
-            startDate: DateTime.now(),
-            endDate: DateTime.now(),
-          );
+                  budgetId: '',
+                  userId: widget.userId,
+                  categoryId: category.exCid,
+                  accountId: '',
+                  budgetAmount: 0,
+                  startDate: DateTime.now(),
+                  endDate: DateTime.now(),
+                );
 
           // Calculate spent amount for this category (mock data for now)
           final spentAmount = budget.spentAmount; // Mock: 60% spent
@@ -457,24 +451,6 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
             userId: widget.userId,
           );
         }),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddCategoryDialog(),
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Category'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -511,11 +487,11 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
           await ref
               .read(expenseCategoriesNotifierProvider.notifier)
               .createCategory(
-            categoryName: name,
-            description: descriptionController.text.trim().isEmpty
-                ? null
-                : descriptionController.text.trim(),
-          );
+                categoryName: name,
+                description: descriptionController.text.trim().isEmpty
+                    ? null
+                    : descriptionController.text.trim(),
+              );
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Category created successfully')),
@@ -530,7 +506,9 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
   }
 
   void _showSpendingLimitDialog([String? categoryId, Balance? balance]) {
-    debugPrint('DEBUG: _showAddExpenseDialog called with categoryId: $categoryId');
+    debugPrint(
+      'DEBUG: _showAddExpenseDialog called with categoryId: $categoryId',
+    );
 
     if (categoryId != null) {
       // Find the category name and color
@@ -560,5 +538,4 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
       }
     }
   }
-
 }

@@ -1,6 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+String formatCurrency(double value) {
+  if (value >= 1_000_000_000) {
+    double inB = value / 1_000_000_000;
+    return '${inB.toStringAsFixed(inB.truncateToDouble() == inB ? 0 : 1)}B ₫';
+  } else if (value >= 1_000_000) {
+    double inM = value / 1_000_000;
+    return '${inM.toStringAsFixed(inM.truncateToDouble() == inM ? 0 : 1)}M ₫';
+  } else if (value >= 1_000) {
+    double inK = value / 1_000;
+    return '${inK.toStringAsFixed(inK.truncateToDouble() == inK ? 0 : 1)}K ₫';
+  } else {
+    return '${value.toStringAsFixed(0).replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (match) => '${match[1]}.')} ₫';
+  }
+}
+
+
 Widget buildHeader(Color color, bool greeting) {
   final now = DateTime.now();
   final dayOfWeek = DateFormat('EEEE').format(now);
