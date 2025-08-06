@@ -1,6 +1,6 @@
 import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
-import '../../model/models.dart';
+import '../../model/budget/budget.dart';
 
 class BudgetService extends ApiService<Budget, String> {
   BudgetService() : super(endpoint: '/api/Budget');

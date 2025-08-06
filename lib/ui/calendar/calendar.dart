@@ -1,16 +1,12 @@
-import 'package:exe201/ui/extra/custom_field.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../extra/speed_dial_menu.dart';
-import '../../model/event.dart';
-import '../../model/assignment.dart';
+import '../../model/models.dart';
 import '../../provider/calendar_providers.dart';
 import 'calendar_theme.dart';
-
-import '../extra/custom_dialog.dart';
+import 'widgets/deadline_dialog.dart';
 
 class CalendarTab extends ConsumerStatefulWidget {
   const CalendarTab({super.key});
@@ -23,97 +19,6 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  void _showAddDeadlineDialog() {
-    final dateController = TextEditingController();
-    final nameController = TextEditingController();
-    final timeController = TextEditingController();
-
-    showCustomBottomSheet(
-      context: context,
-      title: 'Add Deadline',
-      actionText: 'DONE',
-      actionColor: const Color(0xFF6366F1),
-      content: Column(
-        children: [
-          buildDatePickerField(
-            context: context,
-            dateController: dateController,
-          ),
-          SizedBox(height: 16),
-
-          buildFormField(label: 'Name', controller: nameController),
-          const SizedBox(height: 16),
-          buildFormField(label: 'Estimated Time', controller: timeController),
-        ],
-      ),
-      onActionPressed: () async{
-        Navigator.of(context).pop();
-      },
-    );
-  }
-
-  Widget buildDatePickerField({
-    required BuildContext context,
-    required TextEditingController dateController,
-  }) {
-    DateTime selectedDate = DateTime.now();
-
-    void showCupertinoDatePicker() {
-      showModalBottomSheet(
-        context: context,
-        builder: (_) {
-          return Container(
-            height: 300,
-            padding: const EdgeInsets.only(top: 16),
-            child: Column(
-              children: [
-                // Done Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      child: Text("Done"),
-                      onPressed: () {
-                        dateController.text =
-                        "${selectedDate.day.toString().padLeft(2, '0')}/"
-                            "${selectedDate.month.toString().padLeft(2, '0')}/"
-                            "${selectedDate.year}";
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    SizedBox(width: 16),
-                  ],
-                ),
-                // Cupertino Date Picker
-                Expanded(
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.date,
-                    initialDateTime: selectedDate,
-                    maximumDate: DateTime.now(),
-                    onDateTimeChanged: (date) {
-                      selectedDate = date;
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    }
-
-    return TextField(
-      controller: dateController,
-      readOnly: true,
-      onTap: showCupertinoDatePicker,
-      decoration: InputDecoration(
-        labelText: 'Date (DD/MM/YYYY)',
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-        filled: true,
-        fillColor: Colors.grey.withValues(alpha: 0.1),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

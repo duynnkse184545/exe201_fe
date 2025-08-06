@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../provider/calendar_providers.dart';
-import '../extra/header.dart';
-import '../calendar/calendar_theme.dart';
-import '../add_edit/add_edit_view.dart';
-import '../../provider/service_providers.dart';
-import 'event_detail_card.dart';
-import 'assignment_detail_card.dart';
+
+import '../../../../provider/calendar_providers.dart';
+import '../../../../provider/service_providers.dart';
+import '../../../extra/header.dart';
+import '../../calendar_theme.dart';
+import '../dialogs/add_edit_view.dart';
+import '../widgets/assignment_detail_card.dart';
+import '../widgets/event_detail_card.dart';
 
 class ManagementView extends ConsumerStatefulWidget {
   const ManagementView({super.key});
@@ -188,6 +189,7 @@ class _ManagementViewState extends ConsumerState<ManagementView> with TickerProv
     );
   }
 }
+
 
 class _ExpandableTile extends StatefulWidget {
   final Widget leadingIcon;

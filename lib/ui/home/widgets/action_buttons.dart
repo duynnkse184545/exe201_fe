@@ -4,7 +4,9 @@ import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
 import '../../extra/category_colors.dart';
 import '../../../provider/providers.dart';
-import '../../../model/models.dart';
+import '../../../model/balance/balance.dart';
+import '../../../model/expense/expense.dart';
+import '../../../model/expense_category/expense_category.dart';
 import '../../extra/header.dart';
 
 class ActionButtons extends ConsumerStatefulWidget {

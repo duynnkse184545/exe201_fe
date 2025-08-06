@@ -31,7 +31,7 @@ class TvFApp extends StatelessWidget {
           ),
         ),
       ),
-      home: LoginPage(),
+      home: BottomTab(),
       debugShowCheckedModeBanner: false,
     );
   }

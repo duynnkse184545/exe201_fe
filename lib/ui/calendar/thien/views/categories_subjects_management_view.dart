@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../model/event_category.dart';
-import '../../model/subject.dart';
-import '../../provider/calendar_providers.dart';
-import '../../provider/service_providers.dart';
-import '../extra/header.dart';
-import '../calendar/calendar_theme.dart';
-import '../extra/custom_dialog.dart';
+import '../../../../model/event_category/event_category.dart';
+import '../../../../model/subject/subject.dart';
+import '../../../../provider/calendar_providers.dart';
+import '../../../../provider/service_providers.dart';
+import '../../../extra/custom_dialog.dart';
+import '../../../extra/header.dart';
+import '../../calendar_theme.dart';
+
 
 class CategoriesSubjectsManagementView extends ConsumerStatefulWidget {
   const CategoriesSubjectsManagementView({super.key});

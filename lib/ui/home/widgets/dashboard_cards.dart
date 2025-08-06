@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../model/models.dart';
+import '../../../model/balance/balance.dart';
+import '../../../model/expense/expense.dart';
 import '../../../provider/providers.dart';
 import '../../extra/header.dart';
 

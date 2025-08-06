@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../provider/providers.dart';
-import '../../model/models.dart';
+import '../../model/balance/balance.dart';
+import '../../model/budget/budget.dart';
+import '../../model/expense/expense.dart';
+import '../../model/expense_category/expense_category.dart';
 import 'custom_dialog.dart';
 import 'custom_field.dart';
 

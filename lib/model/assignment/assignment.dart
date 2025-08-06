@@ -10,17 +10,30 @@ abstract class Assignment with _$Assignment {
     required String title,
     String? description,
     required DateTime dueDate,
-    DateTime? completedDate,
     required String status,
     required int priorityId,
     String? priorityName,
     String? priorityColorCode,
     int? estimatedTime,
-    required String subjectId,
+    required String? subjectId,
     String? subjectName,
     required String userId,
   }) = _Assignment;
 
   factory Assignment.fromJson(Map<String, dynamic> json) =>
       _$AssignmentFromJson(json);
+}
+
+// Request model for creating and updating assignments
+@freezed
+abstract class AssignmentRequest with _$AssignmentRequest {
+  const factory AssignmentRequest({
+    required String title,
+    String? description,
+    required DateTime dueDate,
+    required int priorityId,
+    required int? estimatedTime,
+  }) = _AssignmentRequest;
+
+  factory AssignmentRequest.fromJson(Map<String, dynamic> json) => _$AssignmentRequestFromJson(json);
 }

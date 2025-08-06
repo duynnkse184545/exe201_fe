@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../model/models.dart';
+import '../model/monthly_balance/monthly_balance.dart';
+import '../model/budget/budget.dart';
 import 'monthly_balance_provider.dart';
 import 'service_providers.dart';
 

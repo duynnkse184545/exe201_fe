@@ -1,6 +1,6 @@
 import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
-import '../../model/models.dart';
+import '../../model/expense_category/expense_category.dart';
 
 class ExpenseCategoryService extends ApiService<ExpenseCategory, String> {
   ExpenseCategoryService() : super(endpoint: '/api/ExpensesCategory');

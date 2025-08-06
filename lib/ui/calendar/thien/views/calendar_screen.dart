@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../provider/calendar_providers.dart' as cal;
-import '../calendar/calendar_theme.dart';
-import '../extra/header.dart';
-import '../extra/speed_dial_menu.dart';
+import '../../../../provider/calendar_providers.dart' as cal;
+import '../../../extra/header.dart';
+import '../../../extra/speed_dial_menu.dart';
+import '../../calendar_theme.dart';
 import 'day_detail_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {

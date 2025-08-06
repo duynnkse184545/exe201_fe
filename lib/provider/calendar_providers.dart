@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../model/assignment.dart';
-import '../model/event.dart';
-import '../model/event_category.dart';
-import '../model/subject.dart';
-import '../model/priority_level.dart';
+import '../model/models.dart';
 import 'service_providers.dart';
 
 part 'calendar_providers.g.dart';

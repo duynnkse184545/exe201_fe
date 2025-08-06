@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import '../../../model/models.dart';
+import '../../../model/balance/balance.dart';
+import '../../../model/financial_account/financial_account.dart';
 import '../../../provider/providers.dart';
 import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';

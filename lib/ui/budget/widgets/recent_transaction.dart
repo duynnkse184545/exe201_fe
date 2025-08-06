@@ -1,7 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../model/models.dart';
+import '../../../model/balance/balance.dart';
+import '../../../model/expense/expense.dart';
+import '../../../model/expense_category/expense_category.dart';
 import '../../../provider/providers.dart';
 import '../../extra/category_colors.dart';
 
