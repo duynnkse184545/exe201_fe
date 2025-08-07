@@ -51,19 +51,19 @@ class MembershipPlan {
     switch (planName!.toLowerCase()) {
       case 'basic':
         return [
-          'Truy cập không giới hạn',
-          'Hỗ trợ 24/7',
-          'Tải xuống offline',
-          '5 thiết bị đồng thời',
+          'Quản lý thu chi cơ bản',
+          'Tạo kế hoạch hàng tháng',
+          'Thông báo nhắc nhở',
+          'Báo cáo chi tiêu tổng quan',
+          'Sử dụng AI quản lý',
         ];
       case 'premium':
         return [
           'Tất cả tính năng Basic',
-          'Chất lượng HD & 4K',
-          'Không quảng cáo',
-          '10 thiết bị đồng thời',
-          'Nội dung độc quyền',
-          'Ưu tiên hỗ trợ',
+          'Phân tích chi tiêu chi tiết',
+          'Lập kế hoạch tự động',
+          'Hỗ trợ ưu tiên 24/7',
+          'Sử dụng chatbot quản lý',
         ];
       case 'vip':
         return [
