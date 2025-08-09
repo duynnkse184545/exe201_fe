@@ -1,6 +1,7 @@
 import 'package:exe201/ui/login/login_ui.dart';
 import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
+import 'package:exe201/ui/membership_plan/membership_plan.dart';
 import 'package:flutter/material.dart';
 
 class UserTab extends StatelessWidget {
@@ -102,7 +103,11 @@ class UserTab extends StatelessWidget {
               title: 'Get Premium',
               onTap: () {
                 // Handle premium tap
-                _showComingSoonDialog(context, 'Get Premium');
+                // _showComingSoonDialog(context, 'Get Premium');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MemberPlan()),
+                );
               },
             ),
 
