@@ -1,4 +1,5 @@
 import 'package:exe201/nav_bar.dart';
+import 'package:exe201/ui/auth_wrapper.dart';
 import 'package:exe201/ui/login/login_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +32,7 @@ class TvFApp extends StatelessWidget {
           ),
         ),
       ),
-      home: LoginPage(),
+      home: AuthWrapper(),
       debugShowCheckedModeBanner: false,
     );
   }

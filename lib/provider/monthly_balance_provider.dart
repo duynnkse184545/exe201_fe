@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../model/models.dart';
+import '../model/budget/budget.dart';
+import '../model/monthly_balance/monthly_balance.dart';
 import 'service_providers.dart';
 
 part 'monthly_balance_provider.g.dart';

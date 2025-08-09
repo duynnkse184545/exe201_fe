@@ -1,10 +1,13 @@
-// import 'package:exe201/ui/test/balance_card_test.dart';
+import 'package:exe201/model/assignment/assignment.dart';
+import 'package:exe201/model/event/event.dart';
 import 'package:exe201/ui/budget/widgets/balance_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../calendar/calendar_theme.dart';
-import '../../provider/calendar_providers.dart';
-import '../../provider/service_providers.dart';
+
+import '../../../../provider/calendar_providers.dart';
+import '../../../../provider/service_providers.dart';
+import '../../calendar_theme.dart';
+
 
 class AddEditView extends ConsumerStatefulWidget {
   final Map<String, dynamic>? eventData;
@@ -298,7 +301,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
         final body = Map<String, dynamic>.from(payload)..['eventId'] = id;
         if (body['recurrenceEndDate'] == null) { body.remove('recurrenceEndDate'); }
         debugPrint('Event update req: $body');
-        await ref.read(eventServiceProvider).updateEvent(body);
+        await ref.read(eventServiceProvider).updateEvent(body as EventRequest);
       } else {
         debugPrint('Event create req: $payload');
         await ref.read(eventServiceProvider).create<Map<String, dynamic>>(payload);
@@ -331,7 +334,7 @@ class _AddEditViewState extends ConsumerState<AddEditView> with SingleTickerProv
         final id = widget.assignmentData!['assignmentId'];
         final body = Map<String, dynamic>.from(payload)..['assignmentId'] = id;
         debugPrint('Assignment update req: $body');
-        await ref.read(assignmentServiceProvider).updateAssignment(body);
+        await ref.read(assignmentServiceProvider).updateAssignment(body as AssignmentRequest);
       } else {
         debugPrint('Assignment create req: $payload');
         await ref.read(assignmentServiceProvider).create<Map<String, dynamic>>(payload);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
-import '../../model/models.dart';
+import '../../model/expense/expense.dart';
 
 class ExpenseService extends ApiService<Expense, String> {
   ExpenseService() : super(endpoint: '/api/Expense');

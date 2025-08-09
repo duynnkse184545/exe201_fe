@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../provider/providers.dart';
-import '../../model/models.dart';
+import '../../model/balance/balance.dart';
+import '../../model/budget/budget.dart';
+import '../../model/expense/expense.dart';
+import '../../model/expense_category/expense_category.dart';
 import 'custom_dialog.dart';
 import 'custom_field.dart';
 
@@ -380,7 +383,7 @@ class _UnifiedBudgetExpenseDialogState
     try {
       _showSnackBar('Setting budget...');
 
-      final balanceData = ref.read(balanceNotifierProvider(widget.userId)).value;
+      final balanceData = ref.read(balanceNotifierProvider).value;
       if (balanceData == null || balanceData.accounts.isEmpty) {
         _showSnackBar('No account found. Please create an account first.');
         return;
@@ -409,7 +412,7 @@ class _UnifiedBudgetExpenseDialogState
         await ref.read(budgetServiceProvider).createBudget(request);
       }
 
-      await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
+      await ref.read(balanceNotifierProvider.notifier).refresh();
       widget.onActionComplete?.call();
       _showSnackBar('Budget set successfully!');
     } catch (e) {
@@ -426,7 +429,7 @@ class _UnifiedBudgetExpenseDialogState
     }
 
     try {
-      final balanceData = ref.read(balanceNotifierProvider(widget.userId)).value;
+      final balanceData = ref.read(balanceNotifierProvider).value;
 
       if (balanceData == null || balanceData.accounts.isEmpty) {
         _showSnackBar('No account found. Please create an account first.');
@@ -444,7 +447,7 @@ class _UnifiedBudgetExpenseDialogState
       );
 
       await ref.read(expenseServiceProvider).createExpense(expenseRequest);
-      await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
+      await ref.read(balanceNotifierProvider.notifier).refresh();
 
       widget.onActionComplete?.call();
       _showSnackBar('Expense added successfully!');

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../model/assignment.dart';
-import '../model/event.dart';
-import '../model/event_category.dart';
-import '../model/subject.dart';
-import '../model/priority_level.dart';
+import '../model/models.dart';
 import 'service_providers.dart';
 
 part 'calendar_providers.g.dart';
@@ -25,7 +21,7 @@ class SelectedMonth extends _$SelectedMonth {
 
 // Provider for events in the current month
 @riverpod
-Future<List<Event>> monthEvents(MonthEventsRef ref) async {
+Future<List<Event>> monthEvents(Ref ref) async {
   // Instead of watching the selectedMonth provider directly,
   // we'll use it only when needed to avoid unnecessary rebuilds
   final selectedMonth = ref.read(selectedMonthProvider);
@@ -45,7 +41,7 @@ Future<List<Event>> monthEvents(MonthEventsRef ref) async {
 
 // Provider for assignments in the current month
 @riverpod
-Future<List<Assignment>> monthAssignments(MonthAssignmentsRef ref) async {
+Future<List<Assignment>> monthAssignments(Ref ref) async {
   // Instead of watching the selectedMonth provider directly,
   // we'll use it only when needed to avoid unnecessary rebuilds
   final selectedMonth = ref.read(selectedMonthProvider);
@@ -64,7 +60,7 @@ Future<List<Assignment>> monthAssignments(MonthAssignmentsRef ref) async {
 
 // Provider for all events (used in management view)
 @riverpod
-Future<List<Event>> events(EventsRef ref) async {
+Future<List<Event>> events(Ref ref) async {
   final events = await ref.watch(eventServiceProvider).getAll();
   final categories = await ref.watch(eventCategoriesProvider.future);
   final catMap = {for (final c in categories) c.evCategoryId!: c.categoryName};
@@ -75,7 +71,7 @@ Future<List<Event>> events(EventsRef ref) async {
 
 // Provider for all assignments (used in management view)
 @riverpod
-Future<List<Assignment>> assignments(AssignmentsRef ref) async {
+Future<List<Assignment>> assignments(Ref ref) async {
   final items = await ref.watch(assignmentServiceProvider).getAll();
   final subjects = await ref.watch(subjectsProvider.future);
   final priorities = await ref.watch(prioritiesProvider.future);
@@ -91,19 +87,19 @@ Future<List<Assignment>> assignments(AssignmentsRef ref) async {
 
 // Provider for all event categories
 @riverpod
-Future<List<EventCategory>> eventCategories(EventCategoriesRef ref) async {
+Future<List<EventCategory>> eventCategories(Ref ref) async {
   return ref.watch(eventCategoryServiceProvider).getAll();
 }
 
 // Provider for all subjects
 @riverpod
-Future<List<Subject>> subjects(SubjectsRef ref) async {
+Future<List<Subject>> subjects(Ref ref) async {
   return ref.watch(subjectServiceProvider).getAll();
 }
 
 // Provider for priorities (readonly)
 @riverpod
-Future<List<PriorityLevel>> priorities(PrioritiesRef ref) async {
+Future<List<PriorityLevel>> priorities(Ref ref) async {
   return ref.watch(priorityLevelServiceProvider).getAll();
 }
 
@@ -122,7 +118,7 @@ class SelectedDay extends _$SelectedDay {
 
 // Provider for events on the selected day
 @riverpod
-Future<List<Event>> dayEvents(DayEventsRef ref) async {
+Future<List<Event>> dayEvents(Ref ref) async {
   final selectedDay = ref.watch(selectedDayProvider);
   final events = await ref.watch(monthEventsProvider.future);
   
@@ -135,7 +131,7 @@ Future<List<Event>> dayEvents(DayEventsRef ref) async {
 
 // Provider for assignments due on the selected day
 @riverpod
-Future<List<Assignment>> dayAssignments(DayAssignmentsRef ref) async {
+Future<List<Assignment>> dayAssignments(Ref ref) async {
   final selectedDay = ref.watch(selectedDayProvider);
   final assignments = await ref.watch(monthAssignmentsProvider.future);
   

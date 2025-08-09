@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-import '../../model/assignment.dart';
-import '../../model/event.dart';
-import '../../provider/calendar_providers.dart';
-import '../extra/header.dart';
-import 'calendar_theme.dart';
+import '../../../../model/assignment/assignment.dart';
+import '../../../../model/event/event.dart';
+import '../../../../provider/calendar_providers.dart';
+import '../../../extra/header.dart';
+import '../../calendar_theme.dart';
+
 
 class CalendarView extends ConsumerStatefulWidget {
   const CalendarView({super.key});

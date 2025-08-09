@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../model/event.dart';
-import '../../model/assignment.dart';
-import '../../provider/calendar_providers.dart';
-import '../calendar/calendar_theme.dart';
-import '../extra/header.dart';
-import '../extra/speed_dial_menu.dart';
+
+import '../../../../model/assignment/assignment.dart';
+import '../../../../model/event/event.dart';
+import '../../../../provider/calendar_providers.dart';
+import '../../../extra/header.dart';
+import '../../../extra/speed_dial_menu.dart';
+import '../../calendar_theme.dart';
+
 
 class DayDetailScreen extends ConsumerWidget {
   final DateTime selectedDate;

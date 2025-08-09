@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   intl: ^0.20.2
   table_calendar: ^3.2.0
+  google_sign_in: ^6.2.1
   percent_indicator: ^4.2.5
   dio: ^5.8.0+1
   flutter_secure_storage: ^9.2.4
@@ -49,6 +50,7 @@ dependencies:
   shared_preferences: ^2.2.2
   http: ^1.4.0
   fl_chart: ^1.0.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -79,3 +81,4 @@ flutter:
 
   assets:
     - assets/google.png
+    - assets/yuni-logo.png
