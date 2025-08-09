@@ -30,10 +30,7 @@ class DeadlineDialog {
       onActionPressed: () async {
         await _createDeadline(context);
       },
-    ).then((_) {
-      // Clean up controllers when dialog is dismissed
-      _disposeControllers();
-    });
+    );
   }
 
   static void _initializeDateTime() {
@@ -54,12 +51,6 @@ class DeadlineDialog {
     _estimatedTimeController.clear();
   }
 
-  static void _disposeControllers() {
-    _dateController.dispose();
-    _timeController.dispose();
-    _nameController.dispose();
-    _estimatedTimeController.dispose();
-  }
 
   static Widget _buildContent(BuildContext context) {
     return Column(

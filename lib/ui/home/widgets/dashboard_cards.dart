@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../model/balance/balance.dart';
 import '../../../model/expense/expense.dart';
 import '../../../provider/providers.dart';
+import '../../../provider/calendar_providers.dart';
 import '../../extra/header.dart';
 
 class DashboardCards extends ConsumerStatefulWidget {
@@ -34,7 +36,10 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
           child: _buildCard(
             header: 'Study Planner',
             color: Color(0xffFA6E5A),
-            content: _buildStudyPlannerContent(),
+            isScrollable: true,
+            isReversed: true,
+            items: _getStudyPlannerItems(),
+            baseColor: const Color(0xffFA6E5A),
           ),
         ),
       ],
@@ -44,6 +49,8 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
   Widget _buildCard({
     required String header,
     required Color color,
+    bool isScrollable = false,
+    bool isReversed = false,
     Widget? content,
     Future<List<Map<String, dynamic>>>? items,
     Color? baseColor,
@@ -91,12 +98,13 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
 
                   final itemList = snapshot.data ?? [];
                   return ListView.separated(
+                    physics: isScrollable? AlwaysScrollableScrollPhysics() : NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
                     itemCount: itemList.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index){
                       final item = itemList[index];
-                      return _buildCardItem(item['title'], item['content'], baseColor);
+                      return _buildCardItem(item['title'], item['content'], baseColor, reversed: isReversed);
                     },
                   );
                 },
@@ -143,19 +151,58 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
     }
   }
 
-  Widget _buildStudyPlannerContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            _buildTimeSlot('9am - 10am'),
-            const SizedBox(height: 8),
-            _buildTimeSlot('8pm - 10pm'),
-          ],
-        ),
-      ],
-    );
+  Future<List<Map<String, dynamic>>> _getStudyPlannerItems() async {
+    try {
+      // Get all assignments without modifying providers
+      final today = DateTime.now();
+      final allAssignments = await ref.watch(assignmentsProvider.future);
+      
+      // Filter assignments for today
+      final todayAssignments = allAssignments.where((assignment) => 
+        assignment.dueDate.year == today.year &&
+        assignment.dueDate.month == today.month &&
+        assignment.dueDate.day == today.day
+      ).toList();
+
+      // Get upcoming assignments (next 7 days)
+      final weekFromNow = today.add(Duration(days: 7));
+      final upcomingAssignments = allAssignments.where((assignment) => 
+        assignment.dueDate.isAfter(today) &&
+        assignment.dueDate.isBefore(weekFromNow)
+      ).toList();
+      
+      // Get next assignment
+      String nextAssignment = 'No assignments';
+      if (todayAssignments.isNotEmpty) {
+        // Sort today's assignments by due time
+        todayAssignments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        final nextToday = todayAssignments.firstWhere(
+          (assignment) => assignment.dueDate.isAfter(DateTime.now()),
+          orElse: () => todayAssignments.first,
+        );
+        nextAssignment = nextToday.title;
+      } else if (upcomingAssignments.isNotEmpty) {
+        // Get next upcoming assignment
+        upcomingAssignments.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        nextAssignment = upcomingAssignments.first.title;
+      }
+
+      return todayAssignments.map((assignment) {
+        return {
+          'title': assignment.title,
+          'content':
+          '${DateFormat('HH:mm').format(assignment.dueDate)}-${DateFormat('HH:mm').format(assignment.dueDate.add(Duration(hours: assignment.estimatedTime)))}',
+        };
+      }).toList();
+
+    } catch (e) {
+      debugPrint(e.toString());
+      return [
+        {'title': 'Due Today', 'content': 'Error'},
+        {'title': 'This Week', 'content': 'Error'},
+        {'title': 'Next Assignment', 'content': 'Error'}
+      ];
+    }
   }
 
   Widget _buildTimeSlot(String timeRange) {
@@ -186,7 +233,11 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
       }) {
     final titleWidget = Text(
       title,
-      style: TextStyle(color: Colors.white70, fontSize: 12),
+      style: TextStyle(
+          color: Colors.white70,
+          fontSize: 13,
+        fontWeight: FontWeight.bold
+      ),
     );
 
     final contentWidget = Text(

@@ -18,8 +18,11 @@ class EventDialog {
   static final _endTimeController = TextEditingController();
   static final _titleController = TextEditingController();
   static final _descriptionController = TextEditingController();
+  static final _repeatEndDateController = TextEditingController();
   static DateTime? _selectedStartDateTime;
   static DateTime? _selectedEndDateTime;
+  static DateTime? _selectedRepeatEndDate;
+  static String _selectedRepeatPattern = 'none';
 
   static void show(BuildContext context) {
     // Initialize controllers with default values
@@ -34,10 +37,7 @@ class EventDialog {
       onActionPressed: () async {
         await _createEvent(context);
       },
-    ).then((_) {
-      // Clean up controllers when dialog is dismissed
-      _disposeControllers();
-    });
+    );
   }
 
   static void _initializeDateTimes() {
@@ -63,43 +63,47 @@ class EventDialog {
     // Clear other fields
     _titleController.clear();
     _descriptionController.clear();
+    _repeatEndDateController.clear();
+    _selectedRepeatEndDate = null;
+    _selectedRepeatPattern = 'none';
   }
 
-  static void _disposeControllers() {
-    _startDateController.dispose();
-    _startTimeController.dispose();
-    _endDateController.dispose();
-    _endTimeController.dispose();
-    _titleController.dispose();
-    _descriptionController.dispose();
-  }
 
   static Widget _buildContent(BuildContext context) {
-    return Column(
-      children: [
-        buildFormField(label: 'Event Title', controller: _titleController),
-        const SizedBox(height: 16),
-        buildFormField(
-          label: 'Description (Optional)', 
-          controller: _descriptionController,
-        ),
-        const SizedBox(height: 16),
-        _buildDateTimePickerField(
-          context: context,
-          label: 'Start Date & Time',
-          dateController: _startDateController,
-          timeController: _startTimeController,
-          isStartTime: true,
-        ),
-        const SizedBox(height: 16),
-        _buildDateTimePickerField(
-          context: context,
-          label: 'End Date & Time',
-          dateController: _endDateController,
-          timeController: _endTimeController,
-          isStartTime: false,
-        ),
-      ],
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          children: [
+            buildFormField(label: 'Event Title', controller: _titleController),
+            const SizedBox(height: 16),
+            buildFormField(
+              label: 'Description (Optional)', 
+              controller: _descriptionController,
+            ),
+            const SizedBox(height: 16),
+            _buildDateTimePickerField(
+              context: context,
+              label: 'Start Date & Time',
+              dateController: _startDateController,
+              timeController: _startTimeController,
+              isStartTime: true,
+            ),
+            const SizedBox(height: 16),
+            _buildDateTimePickerField(
+              context: context,
+              label: 'End Date & Time',
+              dateController: _endDateController,
+              timeController: _endTimeController,
+              isStartTime: false,
+            ),
+            const SizedBox(height: 16),
+            _buildRepeatPatternField(context, setState),
+            const SizedBox(height: 16),
+            if (_selectedRepeatPattern != 'none')
+              _buildRepeatEndDateField(context, setState),
+          ],
+        );
+      },
     );
   }
 
@@ -138,6 +142,8 @@ class EventDialog {
         description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         startDateTime: startDateTime,
         endDateTime: endDateTime,
+        recurrencePattern: _selectedRepeatPattern == 'none' ? null : _selectedRepeatPattern,
+        recurrenceEndDate: _selectedRepeatEndDate,
       );
 
       // Create event using the correct service method
@@ -329,6 +335,121 @@ class EventDialog {
           ),
         );
       },
+    );
+  }
+
+  static Widget _buildRepeatPatternField(BuildContext context, StateSetter setState) {
+    const repeatOptions = [
+      {'value': 'none', 'label': 'None'},
+      {'value': 'daily', 'label': 'Daily'},
+      {'value': 'weekly', 'label': 'Weekly'},
+      {'value': 'monthly', 'label': 'Monthly'},
+      {'value': 'yearly', 'label': 'Yearly'},
+    ];
+
+    return DropdownButtonFormField<String>(
+      value: _selectedRepeatPattern,
+      decoration: InputDecoration(
+        labelText: 'Repeat Pattern',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: Colors.grey.withValues(alpha: 0.1),
+        prefixIcon: const Icon(Icons.repeat, size: 20),
+      ),
+      items: repeatOptions.map((option) {
+        return DropdownMenuItem<String>(
+          value: option['value'],
+          child: Text(option['label']!),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedRepeatPattern = value!;
+          if (value == 'none') {
+            _selectedRepeatEndDate = null;
+            _repeatEndDateController.clear();
+          }
+        });
+      },
+    );
+  }
+
+  static Widget _buildRepeatEndDateField(BuildContext context, StateSetter setState) {
+    return TextField(
+      controller: _repeatEndDateController,
+      readOnly: true,
+      onTap: () {
+        final now = DateTime.now();
+        final startDate = _selectedStartDateTime ?? now;
+        final minimumDate = startDate.add(const Duration(days: 1));
+
+        showModalBottomSheet(
+          context: context,
+          builder: (_) {
+            DateTime selectedDate = _selectedRepeatEndDate ?? minimumDate;
+            
+            return Container(
+              height: 350,
+              padding: const EdgeInsets.only(top: 16),
+              child: Column(
+                children: [
+                  // Header with Done button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(left: 16),
+                        child: Text(
+                          'Select Repeat End Date',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        child: const Text("Done"),
+                        onPressed: () {
+                          _selectedRepeatEndDate = selectedDate;
+                          _repeatEndDateController.text = _formatDate(selectedDate);
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                  // Date Picker
+                  Expanded(
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      initialDateTime: selectedDate,
+                      minimumDate: minimumDate,
+                      maximumDate: now.add(const Duration(days: 365 * 5)), // 5 years max
+                      onDateTimeChanged: (date) {
+                        selectedDate = date;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      decoration: InputDecoration(
+        labelText: 'Repeat Until (Optional)',
+        hintText: 'Select end date for repeat pattern',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: Colors.grey.withValues(alpha: 0.1),
+        suffixIcon: const Icon(Icons.calendar_today, size: 20),
+      ),
     );
   }
 }

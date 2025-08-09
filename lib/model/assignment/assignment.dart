@@ -14,7 +14,7 @@ abstract class Assignment with _$Assignment {
     required int priorityId,
     String? priorityName,
     String? priorityColorCode,
-    int? estimatedTime,
+    required int estimatedTime,
     required String? subjectId,
     String? subjectName,
     required String userId,
