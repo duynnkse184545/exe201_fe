@@ -5,6 +5,8 @@ export 'expense/expense.dart';
 export 'budget/budget.dart';
 export 'balance/balance.dart';
 export 'monthly_balance/monthly_balance.dart';
+export 'monthly_summary/monthly_summary.dart';
+export 'selected_month_data/selected_month_data.dart';
 
 // Event and Assignment models (organized in directories)
 export 'event/event.dart';

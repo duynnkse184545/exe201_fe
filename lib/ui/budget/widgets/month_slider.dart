@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../extra/header.dart';
 
-class MonthSlider extends StatefulWidget {
+// Provider to track selected month and year
+final selectedMonthProvider = StateProvider<DateTime>((ref) => DateTime.now());
+
+class MonthSlider extends ConsumerStatefulWidget {
   const MonthSlider({super.key});
 
   @override
-  State<MonthSlider> createState() => _MonthSliderState();
+  ConsumerState<MonthSlider> createState() => _MonthSliderState();
 }
 
-class _MonthSliderState extends State<MonthSlider> {
+class _MonthSliderState extends ConsumerState<MonthSlider> {
   final List<String> months = [
     'January',
     'February',
@@ -26,20 +30,16 @@ class _MonthSliderState extends State<MonthSlider> {
   ];
 
   late final ScrollController _scrollController;
-  late String selectedMonth;
 
   @override
   void initState() {
     super.initState();
-
-    final currentMonthIndex = DateTime.now().month - 1;
-    selectedMonth = months[currentMonthIndex];
-
     _scrollController = ScrollController();
 
     // Auto-scroll after layout builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToSelectedMonth(currentMonthIndex);
+      final selectedDate = ref.read(selectedMonthProvider);
+      _scrollToSelectedMonth(selectedDate.month - 1);
     });
   }
 
@@ -64,6 +64,8 @@ class _MonthSliderState extends State<MonthSlider> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedDate = ref.watch(selectedMonthProvider);
+    
     return Container(
       margin: EdgeInsets.zero,
       decoration: BoxDecoration(color: Theme.of(context).primaryColor),
@@ -72,9 +74,51 @@ class _MonthSliderState extends State<MonthSlider> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildHeader(Colors.white, true),
+            // Header with year navigation
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                buildHeader(Colors.white, true),
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          final newDate = DateTime(selectedDate.year - 1, selectedDate.month);
+                          ref.read(selectedMonthProvider.notifier).state = newDate;
+                        },
+                        icon: const Icon(Icons.chevron_left, color: Colors.white),
+                        constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.all(4),
+                      ),
+                      Flexible(
+                        child: Text(
+                          selectedDate.year.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          final newDate = DateTime(selectedDate.year + 1, selectedDate.month);
+                          ref.read(selectedMonthProvider.notifier).state = newDate;
+                        },
+                        icon: const Icon(Icons.chevron_right, color: Colors.white),
+                        constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                        padding: EdgeInsets.all(4),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
 
-            const SizedBox(height: 10,),
+            const SizedBox(height: 10),
 
             SingleChildScrollView(
               controller: _scrollController,
@@ -83,19 +127,18 @@ class _MonthSliderState extends State<MonthSlider> {
                 children: months.asMap().entries.map((entry) {
                   final i = entry.key;
                   final month = entry.value;
-                  final isSelected = month == selectedMonth;
+                  final isSelected = i == selectedDate.month - 1;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: ElevatedButton(
                       onPressed: () {
-                        setState(() {
-                          selectedMonth = month;
-                        });
+                        final newDate = DateTime(selectedDate.year, i + 1);
+                        ref.read(selectedMonthProvider.notifier).state = newDate;
                         _scrollToSelectedMonth(i);
                       },
                       style: ElevatedButton.styleFrom(
-                        minimumSize: Size(105, 40),
+                        minimumSize: const Size(105, 40),
                         backgroundColor: isSelected
                             ? Colors.white
                             : Theme.of(context).primaryColor.withValues(alpha: 1.2),
@@ -108,7 +151,7 @@ class _MonthSliderState extends State<MonthSlider> {
                       ),
                       child: Text(
                         month,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),

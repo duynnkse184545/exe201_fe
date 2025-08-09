@@ -349,7 +349,7 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
 
     try {
       // Get the default account from balance data
-      final balanceData = ref.read(balanceNotifierProvider(widget.userId)).value;
+      final balanceData = ref.read(balanceNotifierProvider).value;
       if (balanceData == null || balanceData.accounts.isEmpty) {
         _showErrorSnackBar(context, 'No account found. Please create an account first.');
         return;
@@ -368,7 +368,7 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
       await ref.read(expenseServiceProvider).createExpense(expenseRequest);
       
       // Refresh balance data to reflect the new expense
-      ref.invalidate(balanceNotifierProvider(widget.userId));
+      ref.invalidate(balanceNotifierProvider);
 
       if(!context.mounted) return;
       Navigator.of(context).pop();
@@ -547,7 +547,7 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
 
     return Consumer(
       builder: (context, ref, child) {
-        final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
+        final balanceAsync = ref.watch(balanceNotifierProvider);
         
         return balanceAsync.when(
           loading: () => Container(

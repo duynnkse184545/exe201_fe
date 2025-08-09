@@ -8,7 +8,7 @@ part 'balance_provider.g.dart';
 @riverpod
 class BalanceNotifier extends _$BalanceNotifier {
   @override
-  Future<Balance> build(String userId) async {
+  Future<Balance> build() async {
     // Fetch from backend API (single call with pre-computed data)
     final service = ref.watch(balanceServiceProvider);
     final data = await service.getCompleteBalanceData();

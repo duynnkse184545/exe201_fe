@@ -383,7 +383,7 @@ class _UnifiedBudgetExpenseDialogState
     try {
       _showSnackBar('Setting budget...');
 
-      final balanceData = ref.read(balanceNotifierProvider(widget.userId)).value;
+      final balanceData = ref.read(balanceNotifierProvider).value;
       if (balanceData == null || balanceData.accounts.isEmpty) {
         _showSnackBar('No account found. Please create an account first.');
         return;
@@ -412,7 +412,7 @@ class _UnifiedBudgetExpenseDialogState
         await ref.read(budgetServiceProvider).createBudget(request);
       }
 
-      await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
+      await ref.read(balanceNotifierProvider.notifier).refresh();
       widget.onActionComplete?.call();
       _showSnackBar('Budget set successfully!');
     } catch (e) {
@@ -429,7 +429,7 @@ class _UnifiedBudgetExpenseDialogState
     }
 
     try {
-      final balanceData = ref.read(balanceNotifierProvider(widget.userId)).value;
+      final balanceData = ref.read(balanceNotifierProvider).value;
 
       if (balanceData == null || balanceData.accounts.isEmpty) {
         _showSnackBar('No account found. Please create an account first.');
@@ -447,7 +447,7 @@ class _UnifiedBudgetExpenseDialogState
       );
 
       await ref.read(expenseServiceProvider).createExpense(expenseRequest);
-      await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
+      await ref.read(balanceNotifierProvider.notifier).refresh();
 
       widget.onActionComplete?.call();
       _showSnackBar('Expense added successfully!');

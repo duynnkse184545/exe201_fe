@@ -60,9 +60,10 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
         children: [
           Text(
             header,
+            maxLines: 1,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -109,7 +110,7 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
   Future<List<Map<String, dynamic>>> _getBudgetTrackerItems() async {
     try {
       // Get balance data using the service directly
-      final balanceAsync = await ref.watch(balanceNotifierProvider(widget.userId).future);
+      final balanceAsync = await ref.watch(balanceNotifierProvider.future);
 
       // Get recent expenses
       final expenses = balanceAsync.expenses;

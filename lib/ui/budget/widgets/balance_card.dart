@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../model/balance/balance.dart';
 import '../../../model/financial_account/financial_account.dart';
+import '../../../model/selected_month_data/selected_month_data.dart';
 import '../../../provider/providers.dart';
 import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
@@ -38,13 +39,16 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
 
   @override
   Widget build(BuildContext context) {
-    final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider(widget.userId));
 
-    return balanceAsync.when(
+    return selectedDataAsync.when(
       loading: () => _buildLoadingCard(),
       error: (error, stack) => _buildErrorCard(error.toString()),
-      data: (balance) {
-        return _buildBalanceCard(balance);
+      data: (data) {
+        if (data == null) {
+          return _buildErrorCard('No data available for selected month');
+        }
+        return _buildBalanceCard(data);
       },
     );
   }
@@ -109,9 +113,9 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
     );
   }
 
-  Widget _buildBalanceCard(Balance balance) {
+  Widget _buildBalanceCard(SelectedMonthData data) {
     // Get the actual account balance from provider data
-    final actualBalance = balance.availableBalance;
+    final actualBalance = data.availableBalance;
     // Update animation targets when data changes
     if (_targetBalance != actualBalance) {
       _displayedBalance = _targetBalance;
@@ -120,21 +124,27 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
 
     final List<Map<String, dynamic>> balanceItems = [
       {
-        "title": "Available balance",
+        "title": data.isCurrentMonth ? "Available balance" : "Balance (${data.isPastMonth ? 'Transferred' : 'Not Available'})",
         "amount": formatCurrency(actualBalance),
-        "action": () => _showBalanceDialog(context),
-        "isAnimated": true, // Mark this for animation
+        "action": data.isCurrentMonth ? () => _showBalanceDialog(context) : null,
+        "isAnimated": data.isCurrentMonth, // Only animate current month
       },
       {
         "title": "Income",
-        "amount": formatCurrency(balance.monthlyIncome),
+        "amount": formatCurrency(data.totalIncome),
         "action": () async => debugPrint("Tapped: income"),
         "isAnimated": false,
       },
       {
         "title": "Expenses",
-        "amount": formatCurrency(balance.monthlyExpenses),
+        "amount": formatCurrency(data.totalExpenses),
         "action": () async => debugPrint("Tapped: expenses"),
+        "isAnimated": false,
+      },
+      {
+        "title": data.isPastMonth ? "Net Amount (Final)" : "Net Amount",
+        "amount": formatCurrency(data.netAmount),
+        "action": () async => debugPrint("Tapped: net amount"),
         "isAnimated": false,
       },
     ];
@@ -255,7 +265,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       content: Consumer(
         builder: (context, ref, child) {
           // Use balance provider data instead of separate accounts provider
-          final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
+          final balanceAsync = ref.watch(balanceNotifierProvider);
 
           return balanceAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -366,7 +376,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
           );
 
           // Use balance provider data instead of accounts provider
-          final balanceAsync = ref.read(balanceNotifierProvider(widget.userId));
+          final balanceAsync = ref.read(balanceNotifierProvider);
           final accounts = balanceAsync.when(
             data: (balance) {
               debugPrint('SUCCESS: Got ${balance.accounts.length} accounts from balance');
@@ -421,7 +431,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
           }
 
           // Refresh balance provider to get updated data
-          await ref.read(balanceNotifierProvider(widget.userId).notifier).refresh();
+          await ref.read(balanceNotifierProvider.notifier).refresh();
           if (!context.mounted) return;
           Navigator.of(context).pop({
             'operation': hasAccount ? 'update' : 'create',

@@ -1,6 +1,7 @@
 import 'package:exe201/ui/extra/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../model/selected_month_data/selected_month_data.dart';
 import '../../../provider/providers.dart';
 import '../../../model/balance/balance.dart';
 import '../../../model/budget/budget.dart';
@@ -252,7 +253,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
       "Saving",
     ];
     final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
-    final balanceAsync = ref.watch(balanceNotifierProvider(widget.userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider(widget.userId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,26 +295,28 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               );
             }
 
-            // Check balance
-            if (balanceAsync.hasError) {
-              debugPrint('ERROR: Balance error: ${balanceAsync.error}');
-              debugPrint(
-                'ERROR: Balance stackTrace: ${balanceAsync.stackTrace}',
-              );
+            // Check selected month data
+            if (selectedDataAsync.hasError) {
+              debugPrint('ERROR: Selected month data error: ${selectedDataAsync.error}');
               return Center(
-                child: Text('Error loading balance: ${balanceAsync.error}'),
+                child: Text('Error loading month data: ${selectedDataAsync.error}'),
               );
             }
 
             // Check if both are loaded
-            if (categoriesAsync.hasValue && balanceAsync.hasValue) {
+            if (categoriesAsync.hasValue && selectedDataAsync.hasValue) {
               debugPrint(
-                'SUCCESS: Both categories and balance loaded successfully',
+                'SUCCESS: Both categories and selected month data loaded successfully',
               );
               final categories = categoriesAsync.value!;
-              final balance = balanceAsync.value!;
+              final selectedData = selectedDataAsync.value;
+              
+              if (selectedData == null) {
+                return Center(child: Text('No data available for selected month'));
+              }
+              
               debugPrint(
-                'DEBUG: Categories count: ${categories.length}, Balance userId: ${balance.userId}',
+                'DEBUG: Categories count: ${categories.length}, Selected month: ${selectedData.month}/${selectedData.year}',
               );
 
               // Filter to only show expense categories
@@ -340,12 +343,12 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               debugPrint(
                 'DEBUG: Building categories list with ${expenseCategories.length} categories',
               );
-              return _buildCategoriesList(expenseCategories, balance);
+              return _buildCategoriesList(expenseCategories, selectedData);
             }
 
             // Show loading if either is still loading
             debugPrint(
-              'DEBUG: Still loading - categories.isLoading: ${categoriesAsync.isLoading}, balance.isLoading: ${balanceAsync.isLoading}',
+              'DEBUG: Still loading - categories.isLoading: ${categoriesAsync.isLoading}, selectedData.isLoading: ${selectedDataAsync.isLoading}',
             );
             return const Center(child: CircularProgressIndicator());
           },
@@ -400,7 +403,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
 
   Widget _buildCategoriesList(
     List<ExpenseCategory> categories,
-    Balance balance,
+    SelectedMonthData selectedData,
   ) {
     return Column(
       children: [
@@ -411,10 +414,10 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
 
           // Find budget for this category
           final budget =
-              balance.budgets
+              selectedData.budgets
                   .where((b) => b.categoryId == category.exCid)
                   .isNotEmpty
-              ? balance.budgets.firstWhere(
+              ? selectedData.budgets.firstWhere(
                   (b) => b.categoryId == category.exCid,
                 )
               : Budget(
@@ -447,7 +450,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
               debugPrint(
                 'DEBUG: Set budget button pressed for category: ${category.exCid}',
               );
-              _showSpendingLimitDialog(category.exCid, balance);
+              _showSpendingLimitDialog(category.exCid, selectedData);
             },
             categoryId: category.exCid,
             userId: widget.userId,
@@ -507,7 +510,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
     );
   }
 
-  void _showSpendingLimitDialog([String? categoryId, Balance? balance]) {
+  void _showSpendingLimitDialog([String? categoryId, SelectedMonthData? selectedData]) {
     debugPrint(
       'DEBUG: _showAddExpenseDialog called with categoryId: $categoryId',
     );
@@ -533,7 +536,6 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
             categoryName: category.categoryName,
             categoryColor: color,
             userId: widget.userId,
-            balance: balance,
             initialTab: 0, // Start with budget tab
           );
         }

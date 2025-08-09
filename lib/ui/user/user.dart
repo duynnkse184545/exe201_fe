@@ -1,4 +1,5 @@
 import 'package:exe201/ui/login/login_ui.dart';
+import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
 import 'package:flutter/material.dart';
 
@@ -115,6 +116,23 @@ class UserTab extends StatelessWidget {
               onTap: () {
                 // Handle settings tap
                 _showComingSoonDialog(context, 'Settings');
+              },
+            ),
+
+            SizedBox(height: 15),
+
+            _buildMenuItem(
+              icon: Icons.lock_outline,
+              iconColor: Color(0xFF7B68EE),
+              iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
+              title: 'Reset Password',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ForgotPasswordPage(),
+                  ),
+                );
               },
             ),
 

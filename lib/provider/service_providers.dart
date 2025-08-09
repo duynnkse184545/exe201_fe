@@ -49,6 +49,11 @@ BudgetService budgetService(Ref ref) {
 }
 
 @riverpod
+MonthlySummaryService monthlySummaryService(Ref ref) {
+  return MonthlySummaryService();
+}
+
+@riverpod
 EventService eventService(Ref ref) {
   return EventService();
 }

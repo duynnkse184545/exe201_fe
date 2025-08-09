@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
+import '../extra/pin_verification_dialog.dart';
+import 'reset_password.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -12,6 +15,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
+  final UserService _userService = UserService();
 
   late AnimationController _emailShakeController;
   late Animation<double> _emailShake;
@@ -48,6 +52,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
           children: [
             SizedBox(height: 60),
 
+            Icon(
+              Icons.lock_reset,
+              size: 80,
+              color: Theme.of(context).primaryColor,
+            ),
+            SizedBox(height: 30),
+
             Text(
               'Forgot Password?',
               style: TextStyle(
@@ -59,7 +70,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
             SizedBox(height: 20),
 
             Text(
-              'Enter your email address and we\'ll send you a link to reset your password.',
+              'Enter your email address and we\'ll send you a verification code to reset your password.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -92,7 +103,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
               child: _isLoading
                   ? CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                   : Text(
-                'Send Reset Link',
+                'Send Verification Code',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
@@ -128,7 +139,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
       _emailError = null;
     });
 
-    if (!email.contains('@')) {
+    if (!email.contains('@') || !email.contains('.') || email.length <= 5) {
       setState(() => _emailError = 'Enter a valid email');
       _triggerShake(_emailShakeController);
       return;
@@ -136,20 +147,47 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> with TickerProv
 
     setState(() => _isLoading = true);
 
-    await Future.delayed(Duration(seconds: 2));
+    try {
+      final message = await _userService.sendForgotPasswordCode(email);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Password reset link sent to your email!'),
-        backgroundColor: Colors.green,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-    Navigator.pop(context);
-
-    setState(() => _isLoading = false);
+      // Show PIN verification dialog
+      PinVerificationDialog.show(
+        context: context,
+        email: email,
+        title: 'Verify Your Email',
+        onVerificationComplete: (success, verificationCode) {
+          if (success && verificationCode != null) {
+            // Navigate to reset password page with verification code
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResetPasswordPage(
+                  email: email,
+                  verificationCode: verificationCode,
+                ),
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _emailError = 'Failed to send verification code. Please try again.');
+      _triggerShake(_emailShakeController);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../model/balance/balance.dart';
 import '../../../model/expense/expense.dart';
 import '../../../model/expense_category/expense_category.dart';
+import '../../../model/selected_month_data/selected_month_data.dart';
 import '../../../provider/providers.dart';
 import '../../extra/category_colors.dart';
 
@@ -93,7 +94,7 @@ class RecentTransactionsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final balanceAsync = ref.watch(balanceNotifierProvider(userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider(userId));
 
     return Container(
       margin: const EdgeInsets.all(20),
@@ -108,27 +109,32 @@ class RecentTransactionsSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          balanceAsync.when(
+          selectedDataAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(
               child: Text('Error loading data: $error'),
             ),
-            data: (balance) => _buildContent(balance, ref),
+            data: (selectedData) {
+              if (selectedData == null) {
+                return Center(child: Text('No data available for selected month'));
+              }
+              return _buildContent(selectedData, ref);
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent(Balance balance, WidgetRef ref) {
+  Widget _buildContent(SelectedMonthData selectedData, WidgetRef ref) {
     final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
     
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error loading categories: $error')),
       data: (categories) {
-        // Use recent transactions from balance data
-        final expenses = balance.expenses;
+        // Use recent transactions from selected month data
+        final expenses = selectedData.transactions;
 
 
         // Create a map of categoryId to ExpenseCategory for quick lookup
@@ -166,12 +172,12 @@ class RecentTransactionsSection extends ConsumerWidget {
 
         final totalExpenses = categoryExpenses.values.fold<double>(0, (sum, amount) => sum + amount);
 
-        return _buildPieChart(categoryExpenses, categoryColorMap, categoryIconMap, totalExpenses, expenses, balance, ref, categoryMap);
+        return _buildPieChart(categoryExpenses, categoryColorMap, categoryIconMap, totalExpenses, expenses, selectedData, ref, categoryMap);
       },
     );
   }
 
-  Widget _buildPieChart(Map<String, double> categoryExpenses, Map<String, Color> categoryColorMap, Map<String, String> categoryIconMap, double totalExpenses, List<Expense> expenses, Balance balance, WidgetRef ref, Map<String, ExpenseCategory> categoryMap) {
+  Widget _buildPieChart(Map<String, double> categoryExpenses, Map<String, Color> categoryColorMap, Map<String, String> categoryIconMap, double totalExpenses, List<Expense> expenses, SelectedMonthData selectedData, WidgetRef ref, Map<String, ExpenseCategory> categoryMap) {
 
     return Column(
       children: [

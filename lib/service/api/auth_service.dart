@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'dto/auth_request.dart';
 import 'dto/auth_response.dart';
+import 'exceptions/auth_exceptions.dart';
 import '../storage/token_storage.dart';
 import 'base/api_client.dart';
 
@@ -23,7 +24,16 @@ class AuthService {
       
       return authResponse;
     } on DioException catch (e) {
-      throw Exception('Login failed: ${_formatError(e)}');
+      final errorMessage = _formatError(e);
+      
+      // Check if the error indicates unverified email
+      if (errorMessage.contains('You do not have access!') || 
+          errorMessage.contains('not verified') ||
+          errorMessage.contains('verify')) {
+        throw UnverifiedEmailException('Email verification required', request.username);
+      }
+      
+      throw Exception('Login failed: $errorMessage');
     }
   }
 

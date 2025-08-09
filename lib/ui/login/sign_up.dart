@@ -4,6 +4,7 @@ import '../../model/user/user.dart';
 import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
+import '../extra/pin_verification_dialog.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -353,10 +354,20 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Account created successfully!')),
+        SnackBar(content: Text('Account created successfully! Please verify your email.')),
       );
 
-      Navigator.pop(context);
+      // Show PIN verification dialog directly
+      PinVerificationDialog.show(
+        context: context,
+        email: email,
+        title: 'Verify Your Email',
+        onVerificationComplete: (success, code) {
+          if (success) {
+            Navigator.pop(context); // Go back to login page
+          }
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
