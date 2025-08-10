@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../model/balance/balance.dart';
+import '../../../model/expense/expense.dart';
+import '../../../model/expense_category/expense_category.dart';
 import '../../../model/financial_account/financial_account.dart';
 import '../../../model/selected_month_data/selected_month_data.dart';
 import '../../../provider/providers.dart';
@@ -39,7 +41,7 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
 
   @override
   Widget build(BuildContext context) {
-    final selectedDataAsync = ref.watch(selectedMonthDataProvider(widget.userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider);
 
     return selectedDataAsync.when(
       loading: () => _buildLoadingCard(),
@@ -122,6 +124,10 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       _targetBalance = actualBalance;
     }
 
+    final balanceData = ref.read(balanceNotifierProvider).value;
+    final fixedIncomeAmount = _getIncomeAmount(balanceData, "Salary");
+    final externalIncomeAmount = _getIncomeAmount(balanceData, "Other Source");
+
     final List<Map<String, dynamic>> balanceItems = [
       {
         "title": data.isCurrentMonth ? "Available balance" : "Balance (${data.isPastMonth ? 'Transferred' : 'Not Available'})",
@@ -130,9 +136,15 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
         "isAnimated": data.isCurrentMonth, // Only animate current month
       },
       {
-        "title": "Income",
-        "amount": formatCurrency(data.totalIncome),
-        "action": () async => debugPrint("Tapped: income"),
+        "title": "Fixed Income",
+        "amount": formatCurrency(fixedIncomeAmount),
+        "action": data.isCurrentMonth ? () => _showIncomeDialog(context, "Salary", true) : null,
+        "isAnimated": false,
+      },
+      {
+        "title": "External Income",
+        "amount": formatCurrency(externalIncomeAmount),
+        "action": data.isCurrentMonth ? () => _showIncomeDialog(context, "External Income", false) : null,
         "isAnimated": false,
       },
       {
@@ -297,31 +309,6 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
 
               return Column(
                 children: [
-                  // Show current account info if updating
-                  if (hasAccount && existingAccount != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.info_outline, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Current: ${existingAccount.accountName} - ${existingAccount.balance.toStringAsFixed(0)} ${existingAccount.currencyCode}',
-                              style: const TextStyle(color: Colors.blue),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  if (hasAccount) const SizedBox(height: 16),
-
                   // Account Name Input
                   buildFormField(
                     label: 'Account Name',
@@ -469,4 +456,173 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
       ],
     );
   }
+
+  // Helper method to get income amount for specific category
+  double _getIncomeAmount(Balance? balance, String categoryName) {
+    if (balance == null) return 0.0;
+    
+    final incomeExpenses = balance.expenses.where((expense) =>
+      expense.categoryName == categoryName
+    );
+    
+    return incomeExpenses.fold(0.0, (sum, expense) => sum + expense.amount);
+  }
+
+  Future<void> _showIncomeDialog(BuildContext context, String categoryName, bool isPersistent) async {
+    final amountController = TextEditingController();
+
+    // Get existing income amount for this category
+    final balanceData = ref.read(balanceNotifierProvider).value;
+    final existingAmount = _getIncomeAmount(balanceData, categoryName);
+    if (existingAmount > 0) {
+      amountController.text = existingAmount.toString();
+    }
+
+    await showCustomBottomSheet<void>(
+      context: context,
+      title: categoryName,
+      actionText: 'SAVE',
+      actionColor: Colors.green,
+      content: Column(
+        children: [
+          if (isPersistent)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Fixed income persists across months',
+                      style: TextStyle(color: Colors.green[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          if (!isPersistent)
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_outlined, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'External income resets each month',
+                      style: TextStyle(color: Colors.orange[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          buildFormField(
+            label: '$categoryName Amount',
+            controller: amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ],
+      ),
+      onActionPressed: () async {
+        final amountText = amountController.text.trim();
+
+        if (amountText.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter an amount')),
+          );
+          return;
+        }
+
+        final amount = double.tryParse(amountText);
+        if (amount == null || amount < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter a valid amount')),
+          );
+          return;
+        }
+
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Processing...')),
+          );
+
+          await _createOrUpdateIncomeExpense(categoryName, amount);
+
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$categoryName updated successfully!')),
+          );
+          Navigator.of(context).pop();
+
+        } catch (e) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> _createOrUpdateIncomeExpense(String categoryName, double amount) async {
+    final balanceData = ref.read(balanceNotifierProvider).value;
+    if (balanceData == null || balanceData.accounts.isEmpty) {
+      throw Exception('No account found. Please create an account first.');
+    }
+
+    final defaultAccount = balanceData.accounts.first;
+    
+    // Check if income category exists, if not create it
+    final categoriesData = ref.read(expenseCategoriesNotifierProvider).value;
+    ExpenseCategory? incomeCategory = categoriesData?.firstWhere(
+      (cat) => cat.categoryName == categoryName && cat.type == CategoryType.income,
+      orElse: () => throw StateError('Category not found'),
+    );
+
+
+    // Check if expense already exists for this category
+    final existingExpense = balanceData.expenses.where((expense) => 
+      expense.categoryName == categoryName
+    ).firstOrNull;
+
+    if (existingExpense != null) {
+      // Update existing expense
+      final updateRequest = ExpenseRequest(
+        expensesId: existingExpense.expensesId,
+        amount: amount,
+        description: categoryName,
+        exCid: incomeCategory!.exCid,
+        accountId: defaultAccount.accountId,
+      );
+      await ref.read(expenseServiceProvider).updateExpense(updateRequest);
+    } else {
+      // Create new expense
+      final expenseRequest = ExpenseRequest(
+        amount: amount,
+        description: categoryName,
+        exCid: incomeCategory!.exCid,
+        accountId: defaultAccount.accountId,
+      );
+      await ref.read(expenseServiceProvider).createExpense(expenseRequest);
+    }
+
+    // Refresh balance to show updated data
+    await ref.read(balanceNotifierProvider.notifier).refresh();
+  }
+
 }

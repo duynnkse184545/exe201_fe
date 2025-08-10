@@ -28,51 +28,27 @@ class UserService extends ApiService<User, String> {
     }
   }
 
-  // Get user by ID (inherited method)
-  // Future<User> getById(String userId) is inherited
 
-  // Update user (inherited method with domain-specific wrapper)
-  Future<User> updateUser(String userId, Map<String, dynamic> updates) async {
+  Future<User> updateUser(UserRequest updates) async {
     try {
-      return await updateById<Map<String, dynamic>>(userId, updates);
+      return await update(updates, customPath: 'update-account');
     } catch (e) {
+      print(e.toString());
       throw Exception('Failed to update user: $e');
     }
   }
 
-  // Delete user (inherited method)
-  // Future<void> delete(String userId) is inherited
 
-  // Get user by email (domain-specific method)
-  Future<User?> getUserByEmail(String email) async {
+  Future<User> getUserData() async {
     try {
-      final response = await dio.get('$endpoint/email/$email');
-      if (response.data != null) {
-        return fromJson(response.data);
-      }
-      return null;
+      final response = await dio.get('$endpoint/logged-in-user');
+      print('user: ${response.data['data']}');
+      return fromJson(response.data['data']);
     } catch (e) {
       throw Exception('Failed to get user by email: $e');
     }
   }
 
-  // Update user profile (domain-specific method)
-  Future<User> updateUserProfile(String userId, {
-    String? displayName,
-    String? email,
-    String? phoneNumber,
-  }) async {
-    try {
-      final updates = <String, dynamic>{};
-      if (displayName != null) updates['displayName'] = displayName;
-      if (email != null) updates['email'] = email;
-      if (phoneNumber != null) updates['phoneNumber'] = phoneNumber;
-      
-      return await updateUser(userId, updates);
-    } catch (e) {
-      throw Exception('Failed to update user profile: $e');
-    }
-  }
 
   // Email verification methods with simple parameters and debug logging
   Future<String> verifyEmail(String email, String code) async {

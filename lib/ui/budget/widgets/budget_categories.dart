@@ -253,7 +253,7 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
       "Saving",
     ];
     final categoriesAsync = ref.watch(expenseCategoriesNotifierProvider);
-    final selectedDataAsync = ref.watch(selectedMonthDataProvider(widget.userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

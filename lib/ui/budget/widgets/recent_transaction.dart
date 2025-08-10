@@ -94,7 +94,7 @@ class RecentTransactionsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedDataAsync = ref.watch(selectedMonthDataProvider(userId));
+    final selectedDataAsync = ref.watch(selectedMonthDataProvider);
 
     return Container(
       margin: const EdgeInsets.all(20),

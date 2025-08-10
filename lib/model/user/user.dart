@@ -10,7 +10,7 @@ abstract class User with _$User{
     required String userName,
     required String email,
     DateTime? doB,
-    required String passwordHash,
+    String? passwordHash,
     DateTime? lastLogin,
     String? img,
     bool? isVerified,
@@ -24,16 +24,26 @@ abstract class User with _$User{
 }
 
 @freezed
-abstract class UserRequest with _$UserRequest{
+abstract class UserRequest with _$UserRequest {
   const factory UserRequest({
     required String? fullName,
     required String userName,
     required String email,
+    @JsonKey(toJson: _dateToString, fromJson: _dateFromString)
     DateTime? doB,
-    required String passwordHash,
-    required int roleId
+    String? img,
+    required String? passwordHash,
+    required int roleId,
   }) = _UserRequest;
 
-  factory UserRequest.fromJson(Map<String,dynamic> json) =>
-      _$UserRequestFromJson(json);
+  factory UserRequest.fromJson(Map<String, dynamic> json) => _$UserRequestFromJson(json);
+}
+
+// Helper functions for date conversion
+String? _dateToString(DateTime? date) {
+  return date?.toIso8601String().split('T')[0]; // Returns YYYY-MM-DD
+}
+
+DateTime? _dateFromString(String? dateString) {
+  return dateString != null ? DateTime.parse(dateString) : null;
 }

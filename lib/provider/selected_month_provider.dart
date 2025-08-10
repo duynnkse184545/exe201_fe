@@ -8,7 +8,7 @@ part 'selected_month_provider.g.dart';
 
 // Provider that returns data based on selected month
 @riverpod
-Future<SelectedMonthData?> selectedMonthData(Ref ref, String userId) async {
+Future<SelectedMonthData?> selectedMonthData(Ref ref) async {
   final selectedDate = ref.watch(selectedMonthProvider);
   final now = DateTime.now();
   

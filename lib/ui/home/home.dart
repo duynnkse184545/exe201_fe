@@ -1,3 +1,4 @@
+import 'package:exe201/ui/home/demo.dart';
 import 'package:flutter/material.dart';
 import '../extra/header.dart';
 import 'widgets/dashboard_cards.dart';
@@ -79,7 +80,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Header Section
-                          buildHeader(Colors.black87, true),
+                          buildHeader(color: Colors.black87, subtitle: "Here is today\'s overview" ),
                           SizedBox(height: 24),
 
                           // Cards Section
@@ -91,7 +92,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
                           SizedBox(height: 24),
 
                           // Chart Section
-                          _buildChart(),
+                          CalendarSummary(),
                           SizedBox(height: 24),
 
                           // Gaming Card

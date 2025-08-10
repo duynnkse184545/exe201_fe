@@ -81,7 +81,7 @@ class ExpenseService extends ApiService<Expense, String> {
       if (updates.expensesId == null) {
         throw ArgumentError('expensesId is required for update operations');
       }
-      return await updateById<ExpenseRequest>(updates.expensesId!, updates);
+      return await update(updates);
     } catch (e) {
       throw Exception('Failed to update expense: $e');
     }
