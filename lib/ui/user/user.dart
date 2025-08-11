@@ -1,6 +1,7 @@
 import 'package:exe201/ui/login/login_ui.dart';
 import 'package:exe201/service/storage/token_storage.dart';
 import 'package:flutter/material.dart';
+import 'feedback_screen.dart';
 
 class UserTab extends StatelessWidget {
   const UserTab({super.key});
@@ -115,6 +116,22 @@ class UserTab extends StatelessWidget {
               onTap: () {
                 // Handle settings tap
                 _showComingSoonDialog(context, 'Settings');
+              },
+            ),
+
+            SizedBox(height: 15),
+
+            _buildMenuItem(
+              icon: Icons.feedback,
+              iconColor: Color(0xFF7B68EE),
+              iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
+              title: 'Provide Feedback',
+              onTap: () {
+                // Navigate to feedback screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedbackScreen()),
+                );
               },
             ),
 

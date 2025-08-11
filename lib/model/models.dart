@@ -12,3 +12,6 @@ export 'assignment.dart';
 export 'event_category.dart';
 export 'subject.dart';
 export 'priority_level.dart';
+
+// Review/Feedback model
+export 'review/review.dart';
