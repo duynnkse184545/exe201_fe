@@ -8,7 +8,6 @@ import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
 import '../../../provider/service_providers.dart';
 import '../../../provider/calendar_providers.dart';
-import '../../../service/api/base/id_generator.dart';
 
 class EventDialog {
   // Controllers for the form fields
@@ -27,7 +26,7 @@ class EventDialog {
   static void show(BuildContext context) {
     // Initialize controllers with default values
     _initializeDateTimes();
-    
+
     showCustomBottomSheet(
       context: context,
       title: 'Add Event',
@@ -46,20 +45,28 @@ class EventDialog {
     final minimumDateTime = now.add(const Duration(hours: 1));
     // Round to next 5-minute interval
     final roundedMinutes = ((minimumDateTime.minute / 5).ceil() * 5) % 60;
-    final roundedHour = minimumDateTime.hour + (roundedMinutes == 0 && minimumDateTime.minute > 0 ? 1 : 0);
-    final startDateTime = DateTime(minimumDateTime.year, minimumDateTime.month, minimumDateTime.day, roundedHour, roundedMinutes);
-    
+    final roundedHour =
+        minimumDateTime.hour +
+            (roundedMinutes == 0 && minimumDateTime.minute > 0 ? 1 : 0);
+    final startDateTime = DateTime(
+      minimumDateTime.year,
+      minimumDateTime.month,
+      minimumDateTime.day,
+      roundedHour,
+      roundedMinutes,
+    );
+
     // End time is 1 hour after start time by default
     final endDateTime = startDateTime.add(const Duration(hours: 1));
-    
+
     _startDateController.text = _formatDate(startDateTime);
     _startTimeController.text = _formatTime(startDateTime);
     _selectedStartDateTime = startDateTime;
-    
+
     _endDateController.text = _formatDate(endDateTime);
     _endTimeController.text = _formatTime(endDateTime);
     _selectedEndDateTime = endDateTime;
-    
+
     // Clear other fields
     _titleController.clear();
     _descriptionController.clear();
@@ -67,7 +74,6 @@ class EventDialog {
     _selectedRepeatEndDate = null;
     _selectedRepeatPattern = 'none';
   }
-
 
   static Widget _buildContent(BuildContext context) {
     return StatefulBuilder(
@@ -77,7 +83,7 @@ class EventDialog {
             buildFormField(label: 'Event Title', controller: _titleController),
             const SizedBox(height: 16),
             buildFormField(
-              label: 'Description (Optional)', 
+              label: 'Description (Optional)',
               controller: _descriptionController,
             ),
             const SizedBox(height: 16),
@@ -87,6 +93,7 @@ class EventDialog {
               dateController: _startDateController,
               timeController: _startTimeController,
               isStartTime: true,
+              parentSetState: setState,
             ),
             const SizedBox(height: 16),
             _buildDateTimePickerField(
@@ -95,6 +102,7 @@ class EventDialog {
               dateController: _endDateController,
               timeController: _endTimeController,
               isStartTime: false,
+              parentSetState: setState,
             ),
             const SizedBox(height: 16),
             _buildRepeatPatternField(context, setState),
@@ -109,9 +117,10 @@ class EventDialog {
 
   static Future<void> _createEvent(BuildContext context) async {
     try {
+      print('Starting event creation...');
       // Get ProviderContainer from context for Riverpod access
       final container = ProviderScope.containerOf(context);
-      
+
       // Validate inputs
       if (_titleController.text.trim().isEmpty) {
         _showError(context, 'Please enter an event title');
@@ -119,35 +128,42 @@ class EventDialog {
       }
 
       // Parse the selected date and times
-      final startDateTime = _parseDateTime(_startDateController.text, _startTimeController.text, true);
-      final endDateTime = _parseDateTime(_endDateController.text, _endTimeController.text, false);
-      
-      // Validate that end time is after start time
-      if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
-        _showError(context, 'End time must be after start time');
-        return;
-      }
+      final startDateTime = _parseDateTime(
+        _startDateController.text,
+        _startTimeController.text,
+        true,
+      );
+      final endDateTime = _parseDateTime(
+        _endDateController.text,
+        _endTimeController.text,
+        false,
+      );
 
-      // Get default event category (you might want to make this selectable)
-      final eventCategories = await container.read(eventCategoriesProvider.future);
-      
-      if (eventCategories.isEmpty) {
-        _showError(context, 'No event categories available. Please create an event category first.');
+      // Validate that end time is after start time
+      if (endDateTime.isBefore(startDateTime) ||
+          endDateTime.isAtSameMomentAs(startDateTime)) {
+        _showError(context, 'End time must be after start time');
         return;
       }
 
       // Create event request object
       final eventRequest = EventRequest(
         title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
         startDateTime: startDateTime,
         endDateTime: endDateTime,
-        recurrencePattern: _selectedRepeatPattern == 'none' ? null : _selectedRepeatPattern,
+        recurrencePattern: _selectedRepeatPattern == 'none'
+            ? null
+            : _selectedRepeatPattern,
         recurrenceEndDate: _selectedRepeatEndDate,
       );
 
       // Create event using the correct service method
-      await container.read(eventServiceProvider).createEventFromRequest(eventRequest);
+      await container
+          .read(eventServiceProvider)
+          .createEventFromRequest(eventRequest);
 
       // Refresh the events data
       container.invalidate(eventsProvider);
@@ -156,11 +172,13 @@ class EventDialog {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Event "${_titleController.text.trim()}" created successfully!'),
+          content: Text(
+            'Event "${_titleController.text.trim()}" created successfully!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
-      
+
       Navigator.of(context).pop();
     } catch (e) {
       _showError(context, 'Failed to create event: $e');
@@ -169,26 +187,29 @@ class EventDialog {
 
   static void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
-  static DateTime _parseDateTime(String dateText, String timeText, bool isStartTime) {
+  static DateTime _parseDateTime(
+      String dateText,
+      String timeText,
+      bool isStartTime,
+      ) {
     // Use the stored selected DateTime if available
-    final selectedDateTime = isStartTime ? _selectedStartDateTime : _selectedEndDateTime;
+    final selectedDateTime = isStartTime
+        ? _selectedStartDateTime
+        : _selectedEndDateTime;
     if (selectedDateTime != null) {
       return selectedDateTime;
     }
-    
+
     // Fallback parsing if somehow the stored DateTime is null
     final now = DateTime.now();
     final timeParts = timeText.split(':');
     final hour = int.parse(timeParts[0]);
     final minute = int.parse(timeParts[1]);
-    
+
     return DateTime(now.year, now.month, now.day, hour, minute);
   }
 
@@ -196,7 +217,7 @@ class EventDialog {
     final now = DateTime.now();
     final currentYear = now.year;
     final dateYear = date.year;
-    
+
     // If it's the same year, don't show year
     if (dateYear == currentYear) {
       return DateFormat('EEE, d MMMM').format(date);
@@ -216,19 +237,20 @@ class EventDialog {
     required TextEditingController dateController,
     required TextEditingController timeController,
     required bool isStartTime,
+    StateSetter? parentSetState,
   }) {
     // Use consistent reference time to avoid timing issues
     final now = DateTime.now();
     // Set minimum time to 1 hour from now for start time, or start time for end time
-    final minimumDateTime = isStartTime 
+    final minimumDateTime = isStartTime
         ? now.add(const Duration(hours: 1))
         : (_selectedStartDateTime ?? now.add(const Duration(hours: 1)));
-    
+
     // Round to next 5-minute interval to avoid timing conflicts
     final roundedMinutes = ((minimumDateTime.minute / 5).ceil() * 5) % 60;
     final roundedHour = minimumDateTime.hour + (roundedMinutes == 0 && minimumDateTime.minute > 0 ? 1 : 0);
     final initialDateTime = DateTime(minimumDateTime.year, minimumDateTime.month, minimumDateTime.day, roundedHour, roundedMinutes);
-    
+
     // Ensure initialDateTime is never before minimumDateTime
     final safeInitialDateTime = initialDateTime.isBefore(minimumDateTime) ? minimumDateTime : initialDateTime;
     DateTime selectedDateTime = safeInitialDateTime;
@@ -268,21 +290,30 @@ class EventDialog {
                             onPressed: () {
                               // Store the actual selected DateTime for later use
                               if (isStartTime) {
+                                _startDateController.text = _formatDate(selectedDateTime);
+                                _startTimeController.text = _formatTime(selectedDateTime);
                                 _selectedStartDateTime = selectedDateTime;
-                                // Auto-update end time to be 1 hour after start time if end time is before new start time
-                                if (_selectedEndDateTime != null && _selectedEndDateTime!.isBefore(selectedDateTime)) {
-                                  final newEndDateTime = selectedDateTime.add(const Duration(hours: 1));
-                                  _selectedEndDateTime = newEndDateTime;
-                                  _endDateController.text = _formatDate(newEndDateTime);
-                                  _endTimeController.text = _formatTime(newEndDateTime);
+
+                                // �"� Auto-adjust end date if it's before or equal to the start
+                                if (_selectedEndDateTime == null || _selectedEndDateTime!.isBefore(selectedDateTime) || _selectedEndDateTime!.isAtSameMomentAs(selectedDateTime)) {
+                                  _selectedEndDateTime = selectedDateTime;
+                                  _endDateController.text = _formatDate(selectedDateTime);
+                                  _endTimeController.text = _formatTime(selectedDateTime);
                                 }
                               } else {
+                                _endDateController.text = _formatDate(selectedDateTime);
+                                _endTimeController.text = _formatTime(selectedDateTime);
                                 _selectedEndDateTime = selectedDateTime;
                               }
-                              
+
                               dateController.text = _formatDate(selectedDateTime);
                               timeController.text = _formatTime(selectedDateTime);
-                              setState(() {}); // Update the UI
+
+                              // Update both local and parent state
+                              setState(() {});
+                              if (parentSetState != null) {
+                                parentSetState(() {});
+                              }
                               Navigator.of(context).pop();
                             },
                           ),
@@ -291,33 +322,50 @@ class EventDialog {
                       // Combined Cupertino Date & Time Picker
                       Expanded(
                         child: CupertinoDatePicker(
-                          mode: CupertinoDatePickerMode.dateAndTime,
-                          initialDateTime: safeInitialDateTime,
-                          minimumDate: minimumDateTime, // Prevent selecting less than minimum time
-                          maximumDate: now.add(const Duration(days: 365)),
-                          use24hFormat: true,
-                          minuteInterval: 5, // 5-minute intervals for cleaner selection
-                          onDateTimeChanged: (dateTime) {
-                            // Additional validation to ensure selected time is valid
-                            final minTime = isStartTime 
-                                ? DateTime.now().add(const Duration(hours: 1))
-                                : (_selectedStartDateTime ?? DateTime.now().add(const Duration(hours: 1)));
-                                
-                            if (dateTime.isBefore(minTime)) {
-                              // If somehow an invalid time is selected, round up to minimum time
-                              final roundedMinutes = ((minTime.minute / 5).ceil() * 5) % 60;
-                              final roundedHour = minTime.hour + (roundedMinutes == 0 && minTime.minute > 0 ? 1 : 0);
-                              selectedDateTime = DateTime(
-                                dateTime.year,
-                                dateTime.month,
-                                dateTime.day,
-                                roundedHour,
-                                roundedMinutes,
-                              );
-                            } else {
-                              selectedDateTime = dateTime;
+                            mode: CupertinoDatePickerMode.dateAndTime,
+                            initialDateTime: isStartTime
+                                ? (_selectedStartDateTime ?? DateTime.now().add(const Duration(hours: 1)))
+                                : (_selectedEndDateTime ?? DateTime.now().add(const Duration(hours: 1))),
+                            minimumDate: isStartTime ? null : _selectedStartDateTime,
+                            maximumDate: now.add(const Duration(days: 365)),
+                            use24hFormat: true,
+                            minuteInterval: 5, // 5-minute intervals for cleaner selection
+                            onDateTimeChanged: (dateTime) {
+                              final minTime = isStartTime
+                                  ? DateTime.now().add(const Duration(hours: 1))
+                                  : (_selectedStartDateTime ?? DateTime.now().add(const Duration(hours: 1)));
+
+                              // Adjust if needed
+                              if (dateTime.isBefore(minTime)) {
+                                selectedDateTime = minTime;
+                              } else {
+                                selectedDateTime = dateTime;
+                              }
+
+                              // 🔹 Always update based on the final selectedDateTime
+                              dateController.text = _formatDate(selectedDateTime);
+                              timeController.text = _formatTime(selectedDateTime);
+
+                              // Save selection and handle auto-adjustment for start time
+                              if (isStartTime) {
+                                _selectedStartDateTime = selectedDateTime;
+
+                                // �"� Real-time auto-adjust end date if it's before or equal to the new start time
+                                if (_selectedEndDateTime == null || _selectedEndDateTime!.isBefore(selectedDateTime) || _selectedEndDateTime!.isAtSameMomentAs(selectedDateTime)) {
+                                  _selectedEndDateTime = selectedDateTime;
+                                  _endDateController.text = _formatDate(_selectedEndDateTime!);
+                                  _endTimeController.text = _formatTime(_selectedEndDateTime!);
+                                }
+                              } else {
+                                _selectedEndDateTime = selectedDateTime;
+                              }
+
+                              // Update both local and parent state
+                              setState(() {});
+                              if (parentSetState != null) {
+                                parentSetState(() {});
+                              }
                             }
-                          },
                         ),
                       ),
                     ],
@@ -338,7 +386,10 @@ class EventDialog {
     );
   }
 
-  static Widget _buildRepeatPatternField(BuildContext context, StateSetter setState) {
+  static Widget _buildRepeatPatternField(
+      BuildContext context,
+      StateSetter setState,
+      ) {
     const repeatOptions = [
       {'value': 'none', 'label': 'None'},
       {'value': 'daily', 'label': 'Daily'},
@@ -377,7 +428,10 @@ class EventDialog {
     );
   }
 
-  static Widget _buildRepeatEndDateField(BuildContext context, StateSetter setState) {
+  static Widget _buildRepeatEndDateField(
+      BuildContext context,
+      StateSetter setState,
+      ) {
     return TextField(
       controller: _repeatEndDateController,
       readOnly: true,
@@ -390,7 +444,7 @@ class EventDialog {
           context: context,
           builder: (_) {
             DateTime selectedDate = _selectedRepeatEndDate ?? minimumDate;
-            
+
             return Container(
               height: 350,
               padding: const EdgeInsets.only(top: 16),
@@ -414,7 +468,9 @@ class EventDialog {
                         child: const Text("Done"),
                         onPressed: () {
                           _selectedRepeatEndDate = selectedDate;
-                          _repeatEndDateController.text = _formatDate(selectedDate);
+                          _repeatEndDateController.text = _formatDate(
+                            selectedDate,
+                          );
                           setState(() {});
                           Navigator.of(context).pop();
                         },
@@ -427,7 +483,8 @@ class EventDialog {
                       mode: CupertinoDatePickerMode.date,
                       initialDateTime: selectedDate,
                       minimumDate: minimumDate,
-                      maximumDate: now.add(const Duration(days: 365 * 5)), // 5 years max
+                      maximumDate: now.add(const Duration(days: 365 * 5)),
+                      // 5 years max
                       onDateTimeChanged: (date) {
                         selectedDate = date;
                       },

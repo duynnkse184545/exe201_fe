@@ -175,12 +175,10 @@ class AssignmentService extends ApiService<Assignment, String> {
   // Mark assignment as completed
   Future<Assignment> markAsCompleted(String assignmentId) async {
     try {
-      final completedData = {
-        'assignmentId': assignmentId,
-        'status': 'completed',
-        'completedDate': DateTime.now().toIso8601String(),
-      };
-      return await updateById<Map<String, dynamic>>(assignmentId, completedData);
+        final url = '$endpoint/complete/$assignmentId';
+        final data = {"id" : assignmentId};
+        final response = await dio.put(url, data: data);
+        return Assignment.fromJson(response.data['data']);
     } catch (e) {
       throw Exception('Failed to mark assignment as completed: $e');
     }

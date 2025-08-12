@@ -1,9 +1,11 @@
 import 'package:exe201/ui/login/login_ui.dart';
 import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
+import 'package:exe201/service/google_sign_in_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../provider/providers.dart';
+import '../extra/header.dart';
 import 'membership_plan/membership_plan.dart';
 import 'profile_update.dart';
 
@@ -59,21 +61,7 @@ class UserTab extends ConsumerWidget {
                               shape: BoxShape.circle,
                             ),
                             child: user?.img != null && user!.img!.isNotEmpty
-                                ? ClipOval(
-                                    child: Image.network(
-                                      user.img!,
-                                      fit: BoxFit.cover,
-                                      width: 60,
-                                      height: 60,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 30,
-                                        );
-                                      },
-                                    ),
-                                  )
+                                ? buildImageWidget(context, user!.img, size: 60)
                                 : Icon(
                                     Icons.person,
                                     color: Colors.white,
@@ -191,7 +179,7 @@ class UserTab extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Username',
+                            'Fullname',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -433,17 +421,40 @@ class UserTab extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () async {
-                await TokenStorage().clearToken();
-                if (!context.mounted) return;
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginPage()),
-                );
+                try {
+                  // Sign out from Google Sign-In first
+                  await GoogleSignInService.signOut();
+                  
+                  // Clear local token storage
+                  await TokenStorage().clearToken();
+                  
+                  if (!context.mounted) return;
+                  
+                  // Navigate to login page
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
 
-                // Handle logout logic here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Logged out successfully')),
-                );
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logged out successfully')),
+                  );
+                } catch (e) {
+                  // Even if Google Sign-In logout fails, still clear local storage
+                  await TokenStorage().clearToken();
+                  
+                  if (!context.mounted) return;
+                  
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logged out (with some issues)')),
+                  );
+                }
               },
               child: Text(
                 'Logout',

@@ -1,7 +1,7 @@
 import 'package:exe201/ui/budget/budget.dart';
 import 'package:exe201/ui/calendar/calendar.dart';
 import 'package:exe201/ui/community/community.dart';
-import 'package:exe201/ui/home/demo.dart';
+import 'package:exe201/ui/home/widgets/calendarSummary.dart';
 import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +23,6 @@ class _BottomTabState extends ConsumerState<BottomTab> {
   final List<Widget> _tabs = [
     const HomeTab(),
     const BudgetTab(),
-    const CalendarSummary(),
     const CalendarTab(),
     const UserTab(),
   ];
@@ -59,7 +58,6 @@ class _BottomTabState extends ConsumerState<BottomTab> {
     final icons = [
       Icons.home,
       Icons.credit_card_outlined,
-      Icons.people_sharp,
       Icons.calendar_month_outlined,
       Icons.person_2_rounded,
     ];

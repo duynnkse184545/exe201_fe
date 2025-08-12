@@ -42,42 +42,6 @@ class SpeedDialMenu extends StatelessWidget {
           },
         ),
         SpeedDialChild(
-          child: const Icon(Icons.event_note),
-          backgroundColor: CalendarTheme.accentColor,
-          label: 'Day Detail View',
-          labelStyle: const TextStyle(fontSize: 18.0),
-          onTap: () {
-            // For now just show a snackbar since we haven't implemented the day detail view yet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Day Detail View coming soon!')),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.list),
-          backgroundColor: CalendarTheme.accentColor,
-          label: 'Management View',
-          labelStyle: const TextStyle(fontSize: 18.0),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ManagementView()),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.category),
-          backgroundColor: CalendarTheme.accentColor,
-          label: 'Categories & Subjects',
-          labelStyle: const TextStyle(fontSize: 18.0),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CategoriesSubjectsManagementView()),
-            );
-          },
-        ),
-        SpeedDialChild(
           child: const Icon(Icons.auto_awesome),
           backgroundColor: CalendarTheme.accentColor,
           label: 'AI Create',

@@ -30,6 +30,7 @@ class EventService extends ApiService<Event, String> {
     try {
       return await create<EventRequest>(request);
     } catch (e) {
+      print(e.toString());
       throw Exception('Failed to create event from request: $e');
     }
   }

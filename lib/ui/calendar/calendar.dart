@@ -7,7 +7,6 @@ import '../extra/speed_dial_menu.dart';
 import '../../model/models.dart';
 import '../../provider/calendar_providers.dart';
 import 'calendar_theme.dart';
-import 'widgets/deadline_dialog.dart';
 
 class CalendarTab extends ConsumerStatefulWidget {
   const CalendarTab({super.key});
@@ -200,9 +199,14 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                               _focusedDay = focusedDay;
                             });
                             // Update the selected day provider
-                            ref
-                                .read(selectedDayProvider.notifier)
-                                .setDay(selectedDay);
+                            ref.read(selectedDayProvider.notifier).setDay(selectedDay);
+                          },
+                          onPageChanged: (focusedDay) {
+                            // Called when user swipes to a different month
+                            setState(() {
+                              _focusedDay = focusedDay;
+                            });
+                            ref.read(selectedMonthProvider.notifier).setMonth(focusedDay);
                           },
                           headerVisible: false,
                           calendarStyle: CalendarStyle(
@@ -217,16 +221,13 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
-                            selectedDecoration: const BoxDecoration(
-                              color: CalendarTheme.primaryColor,
-                              // Purple from theme
-                              shape: BoxShape.circle,
+                            selectedDecoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(4), // Changed to rounded rectangle
                             ),
                             todayDecoration: BoxDecoration(
-                              color: CalendarTheme.accentColor.withOpacity(
-                                0.5,
-                              ), // Yellow from theme
-                              shape: BoxShape.circle,
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(4), // Changed to rounded rectangle
                             ),
                             // We'll use the marker builder instead of this
                             markersMaxCount: 3,
@@ -264,67 +265,132 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                             ].take(3).toList();
                           },
                           calendarBuilders: CalendarBuilders(
-                            markerBuilder: (context, date, events) {
-                              if (events.isEmpty)
-                                return const SizedBox.shrink();
-
+                            // Custom builder for days with events/assignments
+                            defaultBuilder: (context, day, focusedDay) {
                               final normalizedDay = DateTime(
-                                date.year,
-                                date.month,
-                                date.day,
+                                day.year,
+                                day.month,
+                                day.day,
                               );
-                              final dayEvents =
-                                  eventsByDay[normalizedDay] ?? [];
-                              final dayAssignments =
-                                  assignmentsByDay[normalizedDay] ?? [];
+                              final dayEvents = eventsByDay[normalizedDay] ?? [];
+                              final dayAssignments = assignmentsByDay[normalizedDay] ?? [];
+                              final hasEvents = dayEvents.isNotEmpty;
+                              final hasAssignments = dayAssignments.isNotEmpty;
+                              final isToday = isSameDay(day, DateTime.now());
+                              final isSelected = isSameDay(day, _selectedDay);
 
-                              return Positioned(
-                                bottom: 1,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Show event indicators (purple)
-                                    if (dayEvents.isNotEmpty)
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 1,
-                                        ),
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: CalendarTheme
-                                              .primaryColor, // Purple for events
-                                        ),
+                              // Default tile color
+                              Color? tileColor;
+                              Decoration? decoration;
+
+                              if (hasEvents && hasAssignments) {
+                                // Both events and assignments - gradient
+                                decoration = BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Color(0xff6CB28E), Color(0xFFFF7043)], // Green + Orange
+                                    stops: [0.5, 0.5],
+                                  ),
+                                );
+                              } else if (hasEvents) {
+                                // Only events - green
+                                tileColor = const Color(0xff6CB28E);
+                              } else if (hasAssignments) {
+                                // Only assignments - orange
+                                tileColor = const Color(0xFFFF7043);
+                              }
+
+                              // Handle today and selected states
+                              if (isSelected || isToday) {
+                                if (hasEvents || hasAssignments) {
+                                  // If it's today/selected AND has events/assignments, combine colors
+                                  if (hasEvents && hasAssignments) {
+                                    decoration = BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Theme.of(context).primaryColor,
+                                          const Color(0xff6CB28E),
+                                          const Color(0xFFFF7043)
+                                        ],
+                                        stops: const [0.33, 0.66, 1.0],
                                       ),
-                                    // Show assignment indicators (blue)
-                                    if (dayAssignments.isNotEmpty)
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 1,
-                                        ),
-                                        decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: CalendarTheme
-                                              .secondaryColor, // Blue for assignments
-                                        ),
+                                    );
+                                  } else {
+                                    decoration = BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Theme.of(context).primaryColor,
+                                          hasEvents ? const Color(0xff6CB28E) : const Color(0xFFFF7043)
+                                        ],
+                                        stops: const [0.5, 0.5],
                                       ),
-                                  ],
-                                ),
-                              );
+                                    );
+                                  }
+                                } else {
+                                  // Just today/selected with no events
+                                  tileColor = Theme.of(context).primaryColor;
+                                }
+                              }
+
+                              if (tileColor != null || decoration != null) {
+                                return Container(
+                                  margin: const EdgeInsets.all(6),
+                                  decoration: decoration ?? BoxDecoration(
+                                    color: tileColor,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${day.day}',
+                                      style: TextStyle(
+                                        color: (tileColor != null || decoration != null)
+                                            ? Colors.white
+                                            : Colors.black87,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              // Return null to use default styling
+                              return null;
+                            },
+
+                            // Override selected and today builders to prevent default styling
+                            selectedBuilder: (context, day, focusedDay) {
+                              // Let defaultBuilder handle selected days
+                              return null;
+                            },
+
+                            todayBuilder: (context, day, focusedDay) {
+                              // Let defaultBuilder handle today
+                              return null;
+                            },
+
+                            markerBuilder: (context, date, events) {
+                              // Remove markers since we're using background colors instead
+                              return const SizedBox.shrink();
                             },
                           ),
                         );
                       },
                       loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      const Center(child: CircularProgressIndicator()),
                       error: (error, stack) =>
                           Center(child: Text('Error: $error')),
                     ),
                     loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    const Center(child: CircularProgressIndicator()),
                     error: (error, stack) =>
                         Center(child: Text('Error: $error')),
                   );
@@ -474,7 +540,7 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                       );
                     },
                     loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    const Center(child: CircularProgressIndicator()),
                     error: (error, stack) =>
                         Center(child: Text('Error: $error')),
                   );

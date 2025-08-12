@@ -78,7 +78,7 @@ class _MonthSliderState extends ConsumerState<MonthSlider> {
               subtitle: 'Here is your Budget tracker!',
               content: Flexible(
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
                       onPressed: () {

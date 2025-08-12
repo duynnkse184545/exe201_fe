@@ -42,7 +42,7 @@ class UserService extends ApiService<User, String> {
   Future<User> getUserData() async {
     try {
       final response = await dio.get('$endpoint/logged-in-user');
-      print('user: ${response.data['data']}');
+      print('rara: ${response.data['data']}');
       return fromJson(response.data['data']);
     } catch (e) {
       throw Exception('Failed to get user by email: $e');

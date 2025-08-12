@@ -1,4 +1,5 @@
 import 'storage/token_storage.dart';
+import 'google_sign_in_service.dart';
 
 class AuthServiceHelper {
   static final TokenStorage _tokenStorage = TokenStorage();
@@ -24,8 +25,17 @@ class AuthServiceHelper {
     return await _tokenStorage.getUsername();
   }
 
-  /// Logout user by clearing token
+  /// Logout user by clearing token and Google Sign-In
   static Future<void> logout() async {
+    try {
+      // Sign out from Google Sign-In first
+      await GoogleSignInService.signOut();
+    } catch (e) {
+      // Continue even if Google Sign-In logout fails
+      print('Google Sign-In logout failed: $e');
+    }
+    
+    // Always clear local token storage
     await _tokenStorage.clearToken();
   }
 

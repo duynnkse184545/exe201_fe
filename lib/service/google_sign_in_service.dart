@@ -2,7 +2,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleSignInService {
   // TODO: Replace with your actual Google OAuth Client ID from Google Cloud Console
-  static const String _webClientId = '241894839268-l62128bkfajdjhv81ftplcl271kotjd5.apps.googleusercontent.com';
+  static const String _webClientId = '241894839268-mbfi811vpfd9bjotp5aqq6uvb9k2kaf8.apps.googleusercontent.com';
   
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
@@ -19,7 +19,7 @@ class GoogleSignInService {
       }
 
       final GoogleSignInAuthentication authentication = await account.authentication;
-      return authentication.idToken;
+      return authentication.accessToken;
     } catch (error) {
       print('Google Sign-In Error: $error');
       throw Exception('Google Sign-In failed: $error');

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../model/models.dart';
-import '../../provider/calendar_providers.dart';
-import '../calendar/calendar_theme.dart';
+import '../../../model/models.dart';
+import '../../../provider/calendar_providers.dart';
+import '../../calendar/calendar_theme.dart';
 
 class CalendarSummary extends ConsumerWidget {
   const CalendarSummary({super.key});
@@ -31,7 +31,7 @@ class CalendarSummary extends ConsumerWidget {
       child: monthEventsAsync.when(
         data: (events) => monthAssignmentsAsync.when(
           data: (assignments) {
-            return _buildCompactCalendar(now, events, assignments);
+            return _buildCompactCalendar(context, now, events, assignments);
           },
           loading: () => const SizedBox(
             height: 120,
@@ -54,7 +54,12 @@ class CalendarSummary extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompactCalendar(DateTime currentMonth, List<Event> events, List<Assignment> assignments) {
+  Widget _buildCompactCalendar(
+      BuildContext context,
+      DateTime currentMonth,
+      List<Event> events,
+      List<Assignment> assignments,
+      ) {
     // Create maps for quick lookup
     final eventsByDay = <int, List<Event>>{};
     final assignmentsByDay = <int, List<Assignment>>{};
@@ -77,7 +82,11 @@ class CalendarSummary extends ConsumerWidget {
 
     // Get calendar info
     final firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
-    final lastDayOfMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0);
+    final lastDayOfMonth = DateTime(
+      currentMonth.year,
+      currentMonth.month + 1,
+      0,
+    );
     final firstWeekday = firstDayOfMonth.weekday % 7; // Make Sunday = 0
     final daysInMonth = lastDayOfMonth.day;
     final today = DateTime.now();
@@ -90,18 +99,20 @@ class CalendarSummary extends ConsumerWidget {
         // Day headers
         Row(
           children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-              .map((day) => Expanded(
-            child: Center(
-              child: Text(
-                day,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[600],
+              .map(
+                (day) => Expanded(
+              child: Center(
+                child: Text(
+                  day,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ),
             ),
-          ))
+          )
               .toList(),
         ),
         const SizedBox(height: 8),
@@ -126,25 +137,47 @@ class CalendarSummary extends ConsumerWidget {
             final day = index - firstWeekday + 1;
             final hasEvents = eventsByDay.containsKey(day);
             final hasAssignments = assignmentsByDay.containsKey(day);
-            final isToday = day == today.day &&
-                currentMonth.month == today.month &&
-                currentMonth.year == today.year;
+            final isToday =
+                day == today.day &&
+                    currentMonth.month == today.month &&
+                    currentMonth.year == today.year;
 
             // Determine tile color based on the image pattern
-            Color tileColor = const Color(0xFFE0E0E0); // Default gray
+            Color tileColor = const Color(0xFFE0E0E0);
 
             if (hasEvents && hasAssignments) {
-              // Both - use a mixed color or prioritize one
-              tileColor = const Color(0xFF5C6BC0); // Blue (like in image)
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xff6CB28E), Color(0xFFFF7043)],
+                    stops: [0.5, 0.5],
+                  ),
+                ),
+              );
             } else if (hasEvents) {
               tileColor = const Color(0xFF5C6BC0); // Blue
             } else if (hasAssignments) {
               tileColor = const Color(0xFFFF7043); // Orange/red
             }
 
-            // Today gets special treatment
-            if (isToday && !hasEvents && !hasAssignments) {
-              tileColor = const Color(0xFF5C6BC0).withOpacity(0.3);
+            if (isToday && hasEvents) {
+              Color eventColor = Theme.of(context).primaryColor;
+              return Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [eventColor, const Color(0xff6CB28E)],
+                    stops: const [0.5, 0.5],
+                  ),
+                ),
+              );
+            } else if (isToday) {
+              tileColor = Theme.of(context).primaryColor;
             }
 
             return Container(
@@ -154,6 +187,58 @@ class CalendarSummary extends ConsumerWidget {
               ),
             );
           },
+        ),
+
+        // Legend/Explanation
+        const SizedBox(height: 12),
+        _buildLegend(context),
+      ],
+    );
+  }
+
+  Widget _buildLegend(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildLegendItem(
+          color: Theme.of(context).primaryColor,
+          label: 'Today',
+        ),
+        _buildLegendItem(
+          color: const Color(0xff6CB28E),
+          label: 'Event',
+        ),
+        _buildLegendItem(
+          color: const Color(0xFFFF7043),
+          label: 'Deadline',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem({
+    required Color color,
+    required String label,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w400,
+            color: Colors.grey,
+          ),
         ),
       ],
     );

@@ -9,7 +9,7 @@ class AuthResponse {
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
-    final user = data['loginResModel'];
+    final user = data['loginResModel'] ?? data['user'];
 
     return AuthResponse(
       token: data['token'],

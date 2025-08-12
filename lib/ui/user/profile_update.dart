@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../provider/user_provider.dart';
+import '../../service/storage/image_storage.dart';
+import '../../service/storage/token_storage.dart';
 import '../extra/custom_field.dart';
+import '../extra/header.dart';
 import '../extra/theme_extensions.dart';
 import '../login/password_reset.dart';
 
@@ -34,6 +37,7 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
     final userAsync = ref.read(userNotifierProvider);
     userAsync.when(
       data: (user) {
+        print('hello: ${user!.img}');
         if (user != null && mounted) {
           setState(() {
             _fullNameController.text = user.fullName;
@@ -58,7 +62,7 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
+
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
@@ -83,7 +87,7 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
@@ -102,8 +106,8 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
       );
       return;
     }
-    
-    if (_emailController.text.trim().isEmpty || 
+
+    if (_emailController.text.trim().isEmpty ||
         !RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim())) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -119,12 +123,26 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
     });
 
     try {
-      // For now, we'll handle image as a string URL
-      // In a real app, you'd upload the image to a server first
+      // Handle image storage properly
       String? imageUrl = _currentImageUrl;
+      
       if (_selectedImage != null) {
-        // This would typically upload to a server and return a URL
-        imageUrl = _selectedImage!.path; // Placeholder
+        // Get user ID for image storage
+        final TokenStorage tokenStorage = TokenStorage();
+        final String? userId = await tokenStorage.getUserId();
+        
+        if (userId != null) {
+          // Save image permanently to app documents directory
+          final String? permanentPath = await ImageStorage.saveImagePermanently(_selectedImage!, userId);
+          if (permanentPath != null) {
+            imageUrl = permanentPath;
+            print('Image saved permanently at: $permanentPath');
+          } else {
+            throw Exception('Failed to save image permanently');
+          }
+        } else {
+          throw Exception('User ID not found');
+        }
       }
 
       await ref.read(userNotifierProvider.notifier).updateProfile(
@@ -205,232 +223,212 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar Section
-            Center(
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar Section
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: context.primaryColor.withOpacity(0.1),
+                          border: Border.all(
+                            color: context.primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: _selectedImage != null
+                            ? ClipOval(
+                          child: Image.file(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                            width: 120,
+                            height: 120,
+                          ),
+                        )
+                            : buildImageWidget(context, _currentImageUrl, size: 120),
+                      ),
+                      // Pen icon at bottom right
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
+                            color: context.primaryColor,
                             shape: BoxShape.circle,
-                            color: context.primaryColor.withOpacity(0.1),
                             border: Border.all(
-                              color: context.primaryColor,
+                              color: Colors.white,
                               width: 2,
                             ),
-                          ),
-                          child: _selectedImage != null
-                              ? ClipOval(
-                                  child: Image.file(
-                                    _selectedImage!,
-                                    fit: BoxFit.cover,
-                                    width: 120,
-                                    height: 120,
-                                  ),
-                                )
-                              : _currentImageUrl != null && _currentImageUrl!.isNotEmpty
-                                  ? ClipOval(
-                                      child: Image.network(
-                                        _currentImageUrl!,
-                                        fit: BoxFit.cover,
-                                        width: 120,
-                                        height: 120,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Icon(
-                                            Icons.person,
-                                            size: 60,
-                                            color: context.primaryColor,
-                                          );
-                                        },
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: context.primaryColor,
-                                    ),
-                        ),
-                        // Pen icon at bottom right
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: context.primaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 18,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Text(
+                    'Tap to change avatar',
+                    style: TextStyle(
+                      color: context.primaryColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: _pickImage,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // Full Name Field
+          buildFormField(
+            label: 'Full Name',
+            controller: _fullNameController,
+            keyboardType: TextInputType.name,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Email Field
+          buildFormField(
+            label: 'Email',
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+          ),
+
+          const SizedBox(height: 20),
+
+          // Date of Birth Field
+          GestureDetector(
+            onTap: _selectDate,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Color(0xFF858484).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.transparent),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    color: context.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Text(
-                      'Tap to change avatar',
+                      _selectedDate != null
+                          ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                          : 'Date of Birth',
                       style: TextStyle(
-                        color: context.primaryColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: _selectedDate != null ? Colors.black87 : Colors.grey[600],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 30),
+          ),
 
-            // Full Name Field
-            buildFormField(
-              label: 'Full Name',
-              controller: _fullNameController,
-              keyboardType: TextInputType.name,
-            ),
+          const SizedBox(height: 40),
 
-            const SizedBox(height: 20),
-
-            // Email Field
-            buildFormField(
-              label: 'Email',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Date of Birth Field
-            GestureDetector(
-              onTap: _selectDate,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Color(0xFF858484).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.transparent),
+          // Update Button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _updateProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_outlined,
-                      color: context.primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _selectedDate != null
-                            ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                            : 'Date of Birth',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: _selectedDate != null ? Colors.black87 : Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                  ],
+                elevation: 0,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+                  : const Text(
+                'Update Profile',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 40),
+          const SizedBox(height: 20),
 
-            // Update Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _updateProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+          // Reset Password Button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: OutlinedButton(
+              onPressed: _isLoading ? null : _navigateToResetPassword,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: context.primaryColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    color: context.primaryColor,
+                    size: 20,
                   ),
-                  elevation: 0,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Update Profile',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Reset Password Button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: _isLoading ? null : _navigateToResetPassword,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: context.primaryColor),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
+                  const SizedBox(width: 8),
+                  Text(
+                    'Reset Password',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: context.primaryColor,
-                      size: 20,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Reset Password',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: context.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
+        ],
       ),
     );
   }
