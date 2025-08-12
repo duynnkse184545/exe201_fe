@@ -3,6 +3,7 @@ import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
 import 'package:exe201/service/google_sign_in_service.dart';
 import 'package:flutter/material.dart';
+import 'feedback_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../provider/providers.dart';
 import '../extra/header.dart';
@@ -304,6 +305,22 @@ class UserTab extends ConsumerWidget {
 
             SizedBox(height: 15),
 
+
+            _buildMenuItem(
+              icon: Icons.feedback,
+              iconColor: Color(0xFF7B68EE),
+              iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
+              title: 'Provide Feedback',
+              onTap: () {
+                // Navigate to feedback screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedbackScreen()),
+                );
+              },
+            ),
+
+            SizedBox(height: 15),
 
             _buildMenuItem(
               icon: Icons.logout,
