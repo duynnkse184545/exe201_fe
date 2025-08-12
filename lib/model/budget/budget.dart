@@ -34,7 +34,6 @@ abstract class BudgetRequest with _$BudgetRequest {
     required String? categoryId,
     required String? accountId,
     required double budgetAmount,
-    required String? userId,
     @Default(false) bool isLocked,
   }) = _BudgetRequest;
 

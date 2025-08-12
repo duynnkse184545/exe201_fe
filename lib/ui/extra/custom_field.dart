@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 Widget buildFormField({
   required String label,
@@ -9,7 +10,10 @@ Widget buildFormField({
   String? errorText,
   Animation<double>? animation,
   TextInputType? keyboardType,
-  bool? isValid ,
+  bool? isValid,
+  bool? enabled,
+  String? hintText,
+  List<TextInputFormatter>? inputFormatters,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -18,9 +22,12 @@ Widget buildFormField({
         animation: animation,
         child: TextFormField(
           controller: controller,
+          enabled: enabled ?? true,
           obscureText: obscureText ?? false,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             labelText: label,
+            hintText: hintText,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
               borderSide: BorderSide.none,

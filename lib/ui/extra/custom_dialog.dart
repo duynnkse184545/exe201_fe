@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-Color getPressedStateColor(Color? color, bool isPressed) {
-  final baseColor = color ?? Color(0xff7583ca);
+Color getPressedStateColor(Color? color, bool isPressed, [BuildContext? context]) {
+  final baseColor = color ?? (context != null ? Theme.of(context).primaryColor : const Color(0xff7583ca));
   if (isPressed) {
     // Use HSLColor to darken slightly
     final hsl = HSLColor.fromColor(baseColor);

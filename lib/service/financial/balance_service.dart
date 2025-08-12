@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-import '../../model/models.dart';
+import '../../model/balance/balance.dart';
+import '../../model/budget/budget.dart';
+import '../../model/expense/expense.dart';
 import '../api/base/generic_handler.dart';
-import '../api/base/api_client.dart';
 
 class BalanceService extends ApiService<Balance, String> {
   BalanceService() : super(endpoint: '/api/enhanced-financial-dashboard');
@@ -19,35 +19,11 @@ class BalanceService extends ApiService<Balance, String> {
     throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
-  // Get complete balance data from backend
-  Future<Balance> getCompleteBalanceData(String userId) async {
+  // Get complete balance data from backend including recent transactions
+  Future<Balance> getCompleteBalanceData() async {
     try {
-      final response = await dio.get('$endpoint/complete-balance/$userId');
+      final response = await dio.get('$endpoint/complete-balance');
       final responseData = response.data['data'] as Map<String, dynamic>;
-
-      // Ensure userId is set for budgets since backend doesn't send it
-      if (responseData['budgets'] != null) {
-        final budgetsList = responseData['budgets'] as List;
-        for (var budget in budgetsList) {
-          if (budget is Map<String, dynamic>) {
-            budget['userId'] = userId;
-          }
-        }
-      }
-
-      // Ensure userId is set for financial accounts since backend doesn't send it
-      if (responseData['accounts'] != null) {
-        final accountsList = responseData['accounts'] as List;
-        for (var account in accountsList) {
-          if (account is Map<String, dynamic>) {
-            account['userId'] = userId;
-          }
-        }
-      }
-
-      // Ensure userId is set for the main balance object
-      responseData['userId'] = userId;
-
       return fromJson(responseData);
     } catch (e, stackTrace) {
       debugPrint('ERROR: Failed in getCompleteBalanceData: $e');
@@ -77,9 +53,9 @@ class BalanceService extends ApiService<Balance, String> {
   }
 
   // Get all recent transactions for current month
-  Future<List<Expense>> getRecentTransactions(String userId) async {
+  Future<List<Expense>> getRecentTransactions() async {
     try {
-      final response = await dio.get('$endpoint/current-month/$userId');
+      final response = await dio.get('$endpoint/current-month');
       final List<dynamic> transactionsList = response.data['data'];
       return transactionsList.map((json) => Expense.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
@@ -89,13 +65,13 @@ class BalanceService extends ApiService<Balance, String> {
 
   // Filter transactions by category (client-side filtering)
   List<Expense> filterTransactionsByCategory(List<Expense> transactions, String categoryId) {
-    return transactions.where((transaction) => transaction.categoryId == categoryId).toList();
+    return transactions.where((transaction) => transaction.exCid == categoryId).toList();
   }
 
   // Get budget health (backend computed)
-  Future<Map<String, int>> getBudgetHealth(String userId) async {
+  Future<Map<String, int>> getBudgetHealth() async {
     try {
-      final response = await dio.get('$endpoint/budget-utilization/$userId');
+      final response = await dio.get('$endpoint/budget-utilization');
       final responseData = response.data as Map<String, dynamic>;
       return {
         'overBudget': responseData['overBudgetCount'] ?? 0,

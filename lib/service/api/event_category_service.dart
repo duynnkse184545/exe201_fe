@@ -1,4 +1,4 @@
-import '../../model/event_category.dart';
+import '../../model/models.dart';
 import 'base/generic_handler.dart';
 
 class EventCategoryService extends ApiService<EventCategory, String> {

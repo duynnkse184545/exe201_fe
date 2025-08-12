@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../model/models.dart';
+import '../model/expense_category/expense_category.dart';
 import 'service_providers.dart';
 
 part 'category_provider.g.dart';

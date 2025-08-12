@@ -16,6 +16,7 @@ abstract class Balance with _$Balance {
     required DateTime lastUpdated,
     @Default([]) List<Budget> budgets,
     @Default([]) List<FinancialAccount> accounts,
+    @Default([]) List<Expense> expenses,
     @Default(false) bool isLoading,
     String? error,
   }) = _Balance;

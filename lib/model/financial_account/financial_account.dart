@@ -22,11 +22,10 @@ abstract class FinancialAccount with _$FinancialAccount {
 @freezed
 abstract class FinancialAccountRequest with _$FinancialAccountRequest {
   const factory FinancialAccountRequest({
-    String? accountId, // null for create, required for update
+    String? accountId,
     required String accountName,
     required double balance,
     @Default('VND') String currencyCode,
-    required String userId,
     @Default(false) bool isDefault,
   }) = _FinancialAccountRequest;
 

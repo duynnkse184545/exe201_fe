@@ -76,7 +76,6 @@ class MonthlyBalanceService extends ApiService<MonthlyBalance, String> {
                   categoryId: budget.categoryId,
                   accountId: budget.accountId,
                   budgetAmount: budget.budgetAmount,
-                  userId: budget.userId,
                   isLocked: budget.isLocked,
                 ))
             .toList(),
@@ -170,7 +169,6 @@ class MonthlyBalanceService extends ApiService<MonthlyBalance, String> {
             categoryId: budget.categoryId,
             accountId: budget.accountId,
             budgetAmount: budget.budgetAmount,
-            userId: userId,
             isLocked: true,
           ))
           .toList();

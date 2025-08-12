@@ -1,4 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <queries>
+  <!-- Allow your app to see any app that can VIEW HTTP links -->
+    <intent>
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="http"/>
+    </intent>
+    <intent>
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="https"/>
+    </intent>
+    </queries>
+
     <application
         android:label="exe201"
         android:name="${applicationName}"
@@ -30,6 +43,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- Google Sign-In OAuth Client ID -->
+        <meta-data
+            android:name="com.google.android.gms.auth.api.signin.GoogleSignInOptions.CLIENT_ID"
+            android:value="241894839268-l62128bkfajdjhv81ftplcl271kotjd5.apps.googleusercontent.com" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

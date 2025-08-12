@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../model/models.dart';
+import '../model/monthly_balance/monthly_balance.dart';
+import '../model/budget/budget.dart';
 import 'monthly_balance_provider.dart';
 import 'service_providers.dart';
 
@@ -146,7 +147,7 @@ double carryOverToNextBalance(Ref ref, String userId) {
 @riverpod
 Future<Map<String, int>> currentMonthBudgetHealth(Ref ref, String userId) async {
   final balanceService = ref.watch(balanceServiceProvider);
-  return await balanceService.getBudgetHealth(userId);
+  return await balanceService.getBudgetHealth();
 }
 
 // Check if current month is completed

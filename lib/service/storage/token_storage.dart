@@ -5,12 +5,24 @@ class TokenStorage {
   final _storage = const FlutterSecureStorage();
   static const _keyToken = 'auth_token';
 
+  // Development token - set this to your actual token for testing
+  static const _developmentToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiJmMjllYThiMC1lNjA0LTQ3ZjYtYjA0OC1lYTI4ZDc0ZDk1MjkiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiIyIiwiZXhwIjoxNzUzNzM3NzE4LCJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo3MTQwIiwiYXVkIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NzE0MCJ9.eX8tCv3PCwRUgPc0bczHDHllZPxUeW3OjEpO9KxME28';
+
   Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: _keyToken);
+    // First try to get stored token
+    final storedToken = await _storage.read(key: _keyToken);
+    print(storedToken);
+    if (storedToken == null) {
+      // Automatically save the development token for future use
+      await saveToken(_developmentToken);
+      return _developmentToken;
+    }
+
+    return storedToken;
   }
 
   Future<void> clearToken() async {
@@ -22,10 +34,9 @@ class TokenStorage {
     try {
       final token = await getToken();
       if (token == null) return null;
-      
+
       return JwtDecoder.decode(token);
     } catch (e) {
-      // Token is invalid or corrupted
       return null;
     }
   }
@@ -35,7 +46,7 @@ class TokenStorage {
     try {
       final token = await getToken();
       if (token == null) return true;
-      
+
       return JwtDecoder.isExpired(token);
     } catch (e) {
       // If we can't decode the token, consider it expired
@@ -48,7 +59,7 @@ class TokenStorage {
     try {
       final token = await getToken();
       if (token == null) return null;
-      
+
       return JwtDecoder.getExpirationDate(token);
     } catch (e) {
       return null;
@@ -59,11 +70,11 @@ class TokenStorage {
   Future<String?> getUserId() async {
     final decoded = await getDecodedToken();
     if (decoded == null) return null;
-    
+
     // Common JWT claims for user ID
-    return decoded['sub'] ?? 
-           decoded['userId'] ?? 
-           decoded['user_id'] ?? 
+    return decoded['sub'] ??
+           decoded['userid'] ??
+           decoded['user_id'] ??
            decoded['id'];
   }
 
@@ -71,11 +82,11 @@ class TokenStorage {
   Future<String?> getUsername() async {
     final decoded = await getDecodedToken();
     if (decoded == null) return null;
-    
+
     // Common JWT claims for username
-    return decoded['username'] ?? 
-           decoded['name'] ?? 
-           decoded['preferred_username'] ?? 
+    return decoded['username'] ??
+           decoded['name'] ??
+           decoded['preferred_username'] ??
            decoded['email'];
   }
 
@@ -83,21 +94,21 @@ class TokenStorage {
   Future<List<String>?> getUserRoles() async {
     final decoded = await getDecodedToken();
     if (decoded == null) return null;
-    
+
     // Handle different role claim formats
-    final roles = decoded['roles'] ?? 
-                  decoded['role'] ?? 
-                  decoded['authorities'] ?? 
+    final roles = decoded['roles'] ??
+                  decoded['role'] ??
+                  decoded['authorities'] ??
                   decoded['groups'];
-    
+
     if (roles == null) return null;
-    
+
     if (roles is List) {
       return roles.cast<String>();
     } else if (roles is String) {
       return [roles];
     }
-    
+
     return null;
   }
 
@@ -111,7 +122,7 @@ class TokenStorage {
   Future<bool> isTokenValid() async {
     final token = await getToken();
     if (token == null) return false;
-    
+
     return !await isTokenExpired();
   }
 }

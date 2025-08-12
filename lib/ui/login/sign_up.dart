@@ -4,6 +4,7 @@ import '../../model/user/user.dart';
 import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
+import '../extra/pin_verification_dialog.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -116,7 +117,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
           icon: Icon(Icons.arrow_circle_left_outlined, size: 40, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Color(0xff7583ca),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(24),
@@ -180,7 +181,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             ElevatedButton(
               onPressed: _isLoading ? null : _signUp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -242,7 +243,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                   child: Text(
                     'Sign in',
                     style: TextStyle(
-                      color: Color(0xff7583ca),
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -353,10 +354,20 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Account created successfully!')),
+        SnackBar(content: Text('Account created successfully! Please verify your email.')),
       );
 
-      Navigator.pop(context);
+      // Show PIN verification dialog directly
+      PinVerificationDialog.show(
+        context: context,
+        email: email,
+        title: 'Verify Your Email',
+        onVerificationComplete: (success, code) {
+          if (success) {
+            Navigator.pop(context); // Go back to login page
+          }
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

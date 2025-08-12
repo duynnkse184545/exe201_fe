@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import '../shared/management_view.dart';
-import '../shared/categories_subjects_management_view.dart';
 import '../calendar/calendar_theme.dart';
+import '../calendar/thien/views/categories_subjects_management_view.dart';
+import '../calendar/thien/views/management_view.dart';
+import '../calendar/widgets/deadline_dialog.dart';
+import '../calendar/widgets/event_dialog.dart';
 import 'ai_create_dialog.dart';
 
 class SpeedDialMenu extends StatelessWidget {
@@ -22,39 +24,21 @@ class SpeedDialMenu extends StatelessWidget {
       curve: Curves.bounceIn,
       children: [
         SpeedDialChild(
-          child: const Icon(Icons.event_note),
+          child: const Icon(Icons.schedule),
           backgroundColor: CalendarTheme.accentColor,
-          label: 'Day Detail View',
+          label: 'Add Deadline',
           labelStyle: const TextStyle(fontSize: 18.0),
           onTap: () {
-            // For now just show a snackbar since we haven't implemented the day detail view yet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Day Detail View coming soon!')),
-            );
+            DeadlineDialog.show(context);
           },
         ),
         SpeedDialChild(
-          child: const Icon(Icons.list),
+          child: const Icon(Icons.event),
           backgroundColor: CalendarTheme.accentColor,
-          label: 'Management View',
+          label: 'Add Event',
           labelStyle: const TextStyle(fontSize: 18.0),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ManagementView()),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.category),
-          backgroundColor: CalendarTheme.accentColor,
-          label: 'Categories & Subjects',
-          labelStyle: const TextStyle(fontSize: 18.0),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CategoriesSubjectsManagementView()),
-            );
+            EventDialog.show(context);
           },
         ),
         SpeedDialChild(

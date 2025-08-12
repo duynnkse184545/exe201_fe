@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/base/generic_handler.dart';
 import '../api/base/id_generator.dart';
-import '../../model/models.dart';
+import '../../model/expense/expense.dart';
 
 class ExpenseService extends ApiService<Expense, String> {
   ExpenseService() : super(endpoint: '/api/Expense');
@@ -29,9 +29,9 @@ class ExpenseService extends ApiService<Expense, String> {
   }
 
   // Get recent transactions from specific endpoint
-  Future<List<Expense>> getRecentTransactions(String userId) async {
+  Future<List<Expense>> getRecentTransactions() async {
     try {
-      final response = await dio.get('$endpoint/recent-transactions/$userId');
+      final response = await dio.get('$endpoint/recent-transactions');
       final List<dynamic> transactionsList = response.data['data'];
       debugPrint('recentTrans: $transactionsList');
       return transactionsList.map((json) => fromJson(json as Map<String, dynamic>)).toList();
@@ -44,7 +44,7 @@ class ExpenseService extends ApiService<Expense, String> {
   Future<List<Expense>> getExpensesByCategory(String categoryId, String userId) async {
     try {
       final userExpenses = await getUserExpenses(userId);
-      return userExpenses.where((expense) => expense.categoryId == categoryId).toList();
+      return userExpenses.where((expense) => expense.exCid == categoryId).toList();
     } catch (e) {
       throw Exception('Failed to get expenses by category: $e');
     }
@@ -78,10 +78,10 @@ class ExpenseService extends ApiService<Expense, String> {
   // Update expense (inherited method with domain-specific wrapper)
   Future<Expense> updateExpense(ExpenseRequest updates) async {
     try {
-      if (updates.expenseId == null) {
+      if (updates.expensesId == null) {
         throw ArgumentError('expensesId is required for update operations');
       }
-      return await updateById<ExpenseRequest>(updates.expenseId!, updates);
+      return await update(updates);
     } catch (e) {
       throw Exception('Failed to update expense: $e');
     }

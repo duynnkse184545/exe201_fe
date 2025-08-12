@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../model/models.dart';
+import '../model/balance/balance.dart';
 import 'service_providers.dart';
 
 part 'balance_provider.g.dart';
@@ -8,10 +8,10 @@ part 'balance_provider.g.dart';
 @riverpod
 class BalanceNotifier extends _$BalanceNotifier {
   @override
-  Future<Balance> build(String userId) async {
+  Future<Balance> build() async {
     // Fetch from backend API (single call with pre-computed data)
     final service = ref.watch(balanceServiceProvider);
-    final data = await service.getCompleteBalanceData(userId);
+    final data = await service.getCompleteBalanceData();
     
     // Cache the data for offline access
     final storage = ref.watch(balanceStorageProvider);
@@ -46,7 +46,7 @@ class BalanceNotifier extends _$BalanceNotifier {
     state = const AsyncLoading();
     try {
       final service = ref.read(balanceServiceProvider);
-      final freshData = await service.getCompleteBalanceData(currentData.userId);
+      final freshData = await service.getCompleteBalanceData();
       
       // Cache the fresh data
       final storage = ref.read(balanceStorageProvider);

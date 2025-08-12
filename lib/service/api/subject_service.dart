@@ -1,4 +1,4 @@
-import '../../model/subject.dart';
+import '../../model/models.dart';
 import 'base/generic_handler.dart';
 
 class SubjectService extends ApiService<Subject, String> {

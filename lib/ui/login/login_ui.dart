@@ -1,12 +1,16 @@
-import 'package:exe201/ui/extra/nav_bar.dart';
+import 'package:exe201/nav_bar.dart';
 import 'package:exe201/service/api/auth_service.dart';
+import 'package:exe201/service/api/exceptions/auth_exceptions.dart';
 import 'package:flutter/material.dart';
 
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
 import '../../service/api/dto/auth_request.dart';
+import '../../service/google_sign_in_service.dart';
+import '../../service/api/user_service.dart';
 import 'password_reset.dart';
 import 'sign_up.dart';
+import 'email_verification.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -62,9 +66,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 40),
 
-            // Logo/Brand name
+            Image.asset(
+              'assets/yuni-logo.png',
+              height: 150,
+              width: 150,
+            ),
+            SizedBox(height: 10),
+
             Text(
               'Welcome Back!',
               style: TextStyle(
@@ -73,7 +82,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 30),
 
             buildFormField(
               label: 'Username',
@@ -116,7 +125,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ElevatedButton(
               onPressed: _isLoading ? null : _login,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xff7583ca),
+                backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -135,7 +144,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             SizedBox(height: 30),
 
             Text(
-              '- Or sign in with -',
+              '- Or -',
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 14,
@@ -143,33 +152,38 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
             SizedBox(height: 20),
 
-            // Social login buttons row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildSocialButton(
-                  onPressed: () {
-                    // Handle Google login
-                  },
-                  child: Image.asset(
+            // Google Sign In Button
+            ElevatedButton(
+              onPressed: _isLoading ? null : _signInWithGoogle,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black87,
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+                minimumSize: Size(double.infinity, 48),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
                     'assets/google.png',
-                    height: 24,
-                    width: 24,
+                    height: 20,
+                    width: 20,
                   ),
-                ),
-                _buildSocialButton(
-                  onPressed: () {
-                    // Handle Facebook login
-                  },
-                  child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 28),
-                ),
-                _buildSocialButton(
-                  onPressed: () {
-                    // Handle Twitter login
-                  },
-                  child: Icon(Icons.flutter_dash, color: Color(0xFF1DA1F2), size: 24), // Using flutter_dash as Twitter alternative
-                ),
-              ],
+                  SizedBox(width: 12),
+                  Text(
+                    'Sign in with Google',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: 40),
 
@@ -191,7 +205,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   child: Text(
                     'Sign up',
                     style: TextStyle(
-                      color: Color(0xff7583ca),
+                      color: Theme.of(context).primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -204,36 +218,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSocialButton({
-    required VoidCallback onPressed,
-    required Widget child,
-  }) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(30),
-          child: Center(child: child),
-        ),
-      ),
-    );
-  }
 
   @override
   void dispose() {
@@ -292,6 +276,31 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         context,
         MaterialPageRoute(builder: (_) => BottomTab()),
       );
+    } on UnverifiedEmailException catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      // Show message and navigate to email verification page
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please verify your email to continue'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+
+      // Navigate to email verification page
+      final verified = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EmailVerificationPage(),
+        ),
+      );
+
+      if (verified == true) {
+        // Try login again after verification
+        _login();
+      }
     } catch (e) {
       if (!mounted) return;
 
@@ -302,6 +311,44 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       });
       _triggerShake(_usernameShakeController);
       _triggerShake(_passwordShakeController);
+    }
+  }
+
+  void _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // Get Google ID token
+      final String? idToken = await GoogleSignInService.signIn();
+      
+      if (idToken == null) {
+        // User cancelled sign-in
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Login with backend using the ID token
+      final userService = UserService();
+      await userService.loginWithGoogle(idToken);
+
+      if (!mounted) return;
+
+      // Login successful - navigate to main app
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => BottomTab()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      debugPrint(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign-in failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      setState(() => _isLoading = false);
     }
   }
 
