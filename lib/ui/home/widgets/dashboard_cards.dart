@@ -104,7 +104,7 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
                     separatorBuilder: (context, index) => const SizedBox(height: 8),
                     itemBuilder: (context, index){
                       final item = itemList[index];
-                      return _buildCardItem(item['title'], item['content'], baseColor, reversed: isReversed);
+                      return _buildCardItem(item['title'], item['content'], baseColor, reversed: isReversed, isCompleted: item['isCompleted'] ?? false);
                     },
                   );
                 },
@@ -163,7 +163,7 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
         assignment.dueDate.month == today.month &&
         assignment.dueDate.day == today.day
       ).toList();
-
+      print(todayAssignments);
       // Get upcoming assignments (next 7 days)
       final weekFromNow = today.add(Duration(days: 7));
       final upcomingAssignments = allAssignments.where((assignment) => 
@@ -187,11 +187,18 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
         nextAssignment = upcomingAssignments.first.title;
       }
 
+      if (todayAssignments.isEmpty) {
+        return [
+          {'title': 'Due Today', 'content': 'No deadline'},
+        ];
+      }
+
       return todayAssignments.map((assignment) {
         return {
           'title': assignment.title,
           'content':
           '${DateFormat('HH:mm').format(assignment.dueDate)}-${DateFormat('HH:mm').format(assignment.dueDate.add(Duration(hours: assignment.estimatedTime)))}',
+          'isCompleted': assignment.status == 'completed',
         };
       }).toList();
 
@@ -229,11 +236,14 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
       String title,
       String content,
       Color baseColor, {
+        bool? isCompleted = false,
         bool reversed = false,
       }) {
     final titleWidget = Text(
       title,
       style: TextStyle(
+          decoration: !isCompleted!? null : TextDecoration.lineThrough,
+          decorationColor: Colors.white70,
           color: Colors.white70,
           fontSize: 13,
         fontWeight: FontWeight.bold
@@ -244,6 +254,8 @@ class _DashboardCardsState extends ConsumerState<DashboardCards> {
       content,
       maxLines: 1,
       style: TextStyle(
+        decoration: isCompleted? TextDecoration.lineThrough : null,
+        decorationColor: Colors.white70,
         color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.bold,

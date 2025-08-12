@@ -84,11 +84,11 @@ class _PinVerificationDialogState extends State<PinVerificationDialog> {
 
             // PIN Input Fields
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(6, (index) => 
-                  Flexible(
+                  Expanded(
                     child: Container(
                       margin: EdgeInsets.symmetric(horizontal: 2),
                       child: _buildPinField(index),
@@ -181,7 +181,7 @@ class _PinVerificationDialogState extends State<PinVerificationDialog> {
 
   Widget _buildPinField(int index) {
     return Container(
-      width: 40,
+      width: 70,
       height: 50,
       decoration: BoxDecoration(
         border: Border.all(

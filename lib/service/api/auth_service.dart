@@ -3,6 +3,7 @@ import 'dto/auth_request.dart';
 import 'dto/auth_response.dart';
 import 'exceptions/auth_exceptions.dart';
 import '../storage/token_storage.dart';
+import '../google_sign_in_service.dart';
 import 'base/api_client.dart';
 
 class AuthService {
@@ -38,6 +39,15 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    try {
+      // Sign out from Google Sign-In first
+      await GoogleSignInService.signOut();
+    } catch (e) {
+      // Continue even if Google Sign-In logout fails
+      print('Google Sign-In logout failed: $e');
+    }
+    
+    // Always clear local token storage
     await _tokenStorage.clearToken();
   }
 

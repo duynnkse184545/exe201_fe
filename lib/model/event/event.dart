@@ -13,7 +13,7 @@ abstract class Event with _$Event {
     required DateTime endDateTime,
     String? recurrencePattern,
     DateTime? recurrenceEndDate,
-    required String evCategoryId,
+    String? evCategoryId,
     String? categoryName,
     required String userId,
     @Default(false) bool isRecurring,

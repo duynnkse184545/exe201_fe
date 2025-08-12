@@ -59,10 +59,11 @@ abstract class ApiService<T, ID> {
     }
   }
 
-  Future<T> update<TRequest>(TRequest data) async {
+  Future<T> update<TRequest>(TRequest data, {String? customPath}) async {
+    final path = customPath != null? '$endpoint/$customPath' : endpoint;
     try {
       final jsonData = toJson(data);
-      final response = await dio.put(endpoint, data: jsonData);
+      final response = await dio.put(path, data: jsonData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');

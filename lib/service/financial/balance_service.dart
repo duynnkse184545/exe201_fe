@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../../model/balance/balance.dart';
 import '../../model/budget/budget.dart';
-import '../../model/financial_account/financial_account.dart';
 import '../../model/expense/expense.dart';
 import '../api/base/generic_handler.dart';
-import '../api/base/api_client.dart';
 
 class BalanceService extends ApiService<Balance, String> {
   BalanceService() : super(endpoint: '/api/enhanced-financial-dashboard');

@@ -55,7 +55,6 @@ class _MonthSliderState extends ConsumerState<MonthSlider> {
     );
   }
 
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -65,7 +64,7 @@ class _MonthSliderState extends ConsumerState<MonthSlider> {
   @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedMonthProvider);
-    
+
     return Container(
       margin: EdgeInsets.zero,
       decoration: BoxDecoration(color: Theme.of(context).primaryColor),
@@ -74,48 +73,56 @@ class _MonthSliderState extends ConsumerState<MonthSlider> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with year navigation
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                buildHeader(Colors.white, true),
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          final newDate = DateTime(selectedDate.year - 1, selectedDate.month);
-                          ref.read(selectedMonthProvider.notifier).state = newDate;
-                        },
-                        icon: const Icon(Icons.chevron_left, color: Colors.white),
-                        constraints: BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: EdgeInsets.all(4),
-                      ),
-                      Flexible(
-                        child: Text(
-                          selectedDate.year.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+            buildHeader(
+              color: Colors.white,
+              subtitle: 'Here is your Budget tracker!',
+              content: Flexible(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        final newDate = DateTime(
+                          selectedDate.year - 1,
+                          selectedDate.month,
+                        );
+                        ref.read(selectedMonthProvider.notifier).state =
+                            newDate;
+                      },
+                      icon: const Icon(Icons.chevron_left, color: Colors.white),
+                      constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                      padding: EdgeInsets.all(4),
+                    ),
+                    Flexible(
+                      child: Text(
+                        selectedDate.year.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      IconButton(
-                        onPressed: () {
-                          final newDate = DateTime(selectedDate.year + 1, selectedDate.month);
-                          ref.read(selectedMonthProvider.notifier).state = newDate;
-                        },
-                        icon: const Icon(Icons.chevron_right, color: Colors.white),
-                        constraints: BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: EdgeInsets.all(4),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        final newDate = DateTime(
+                          selectedDate.year + 1,
+                          selectedDate.month,
+                        );
+                        ref.read(selectedMonthProvider.notifier).state =
+                            newDate;
+                      },
+                      icon: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                      constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                      padding: EdgeInsets.all(4),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -134,14 +141,17 @@ class _MonthSliderState extends ConsumerState<MonthSlider> {
                     child: ElevatedButton(
                       onPressed: () {
                         final newDate = DateTime(selectedDate.year, i + 1);
-                        ref.read(selectedMonthProvider.notifier).state = newDate;
+                        ref.read(selectedMonthProvider.notifier).state =
+                            newDate;
                         _scrollToSelectedMonth(i);
                       },
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(105, 40),
                         backgroundColor: isSelected
                             ? Colors.white
-                            : Theme.of(context).primaryColor.withValues(alpha: 1.2),
+                            : Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 1.2),
                         foregroundColor: isSelected
                             ? Theme.of(context).primaryColor
                             : Colors.white,

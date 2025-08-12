@@ -8,6 +8,7 @@ import '../service/api/priority_level_service.dart';
 import '../service/api/ai_service.dart';
 import '../service/financial/services.dart';
 import '../service/storage/balance_storage.dart';
+import '../service/api/user_service.dart';
 
 part 'service_providers.g.dart';
 
@@ -81,4 +82,9 @@ PriorityLevelService priorityLevelService(Ref ref) {
 @riverpod
 AIServiceApi aiService(Ref ref) {
   return AIServiceApi();
+}
+
+@riverpod
+UserService userService(Ref ref) {
+  return UserService();
 }

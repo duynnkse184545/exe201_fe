@@ -340,7 +340,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       );
     } catch (e) {
       if (!mounted) return;
-      
+      debugPrint(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Google sign-in failed. Please try again.'),

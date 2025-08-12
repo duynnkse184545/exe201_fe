@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../extra/header.dart';
 import 'widgets/dashboard_cards.dart';
 import 'widgets/action_buttons.dart';
+import 'widgets/chart_calendar_slider.dart';
 import '../../service/storage/token_storage.dart';
 
 class HomeTab extends StatelessWidget {
@@ -21,6 +22,7 @@ class HomeTabPage extends StatefulWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -79,7 +81,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Header Section
-                          buildHeader(Colors.black87, true),
+                          buildHeader(color: Colors.black87, subtitle: "Here is today\'s overview" ),
                           SizedBox(height: 24),
 
                           // Cards Section
@@ -90,8 +92,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
                           ActionButtons(userId: userId),
                           SizedBox(height: 24),
 
-                          // Chart Section
-                          _buildChart(),
+                          // Chart and Calendar Slider Section
+                          const ChartCalendarSlider(),
                           SizedBox(height: 24),
 
                           // Gaming Card
@@ -111,20 +113,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
 
 
-  Widget _buildChart() {
-    return Container(
-      height: 140,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      padding: EdgeInsets.all(20),
-      child: CustomPaint(
-        painter: ChartPainter(),
-        size: Size(double.infinity, 100),
-      ),
-    );
-  }
 
   Widget _buildGamingCard() {
     return Container(
@@ -155,50 +143,3 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
 }
 
-class ChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Color(0xFF6366F1)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(0, size.height * 0.8);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height * 0.4,
-      size.width * 0.5,
-      size.height * 0.6,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.75,
-      size.height * 0.2,
-      size.width,
-      size.height * 0.5,
-    );
-
-    canvas.drawPath(path, paint);
-
-    // Fill area under curve
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Color(0xFF6366F1).withValues(alpha: 0.3),
-          Color(0xFF6366F1).withValues(alpha: 0.0),
-        ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final fillPath = Path.from(path);
-    fillPath.lineTo(size.width, size.height);
-    fillPath.lineTo(0, size.height);
-    fillPath.close();
-
-    canvas.drawPath(fillPath, fillPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

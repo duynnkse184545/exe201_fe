@@ -1,14 +1,20 @@
 import 'package:exe201/ui/login/login_ui.dart';
 import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
-import 'package:exe201/ui/membership_plan/membership_plan.dart';
+import 'package:exe201/service/google_sign_in_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../provider/providers.dart';
+import '../extra/header.dart';
+import 'membership_plan/membership_plan.dart';
+import 'profile_update.dart';
 
-class UserTab extends StatelessWidget {
+class UserTab extends ConsumerWidget {
   const UserTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userNotifierProvider);
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(),
@@ -35,58 +41,230 @@ class UserTab extends StatelessWidget {
               child: Row(
                 children: [
                   // Profile Avatar
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B6B),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 30,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileUpdatePage(),
+                        ),
+                      );
+                    },
+                    child: userAsync.when(
+                      data: (user) => Stack(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFF6B6B),
+                              shape: BoxShape.circle,
+                            ),
+                            child: user?.img != null && user!.img!.isNotEmpty
+                                ? buildImageWidget(context, user!.img, size: 60)
+                                : Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                          ),
+                          // Small pen icon at bottom right
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Color(0xff7583ca),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      loading: () => Stack(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFF6B6B),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Color(0xff7583ca),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      error: (_, __) => Stack(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFF6B6B),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Color(0xff7583ca),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   SizedBox(width: 15),
 
                   // User Info
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Username',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w400,
+                    child: userAsync.when(
+                      data: (user) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fullname',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Afsar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          SizedBox(height: 4),
+                          Text(
+                            user?.fullName ?? 'User',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      loading: () => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Username',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      error: (_, __) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Username',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'User',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
                   // Edit Icon
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.edit,
-                      size: 18,
-                      color: Colors.grey[600],
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileUpdatePage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ),
                 ],
@@ -126,22 +304,6 @@ class UserTab extends StatelessWidget {
 
             SizedBox(height: 15),
 
-            _buildMenuItem(
-              icon: Icons.lock_outline,
-              iconColor: Color(0xFF7B68EE),
-              iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
-              title: 'Reset Password',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ForgotPasswordPage(),
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(height: 15),
 
             _buildMenuItem(
               icon: Icons.logout,
@@ -259,17 +421,40 @@ class UserTab extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                await TokenStorage().clearToken();
-                if (!context.mounted) return;
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginPage()),
-                );
+                try {
+                  // Sign out from Google Sign-In first
+                  await GoogleSignInService.signOut();
+                  
+                  // Clear local token storage
+                  await TokenStorage().clearToken();
+                  
+                  if (!context.mounted) return;
+                  
+                  // Navigate to login page
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
 
-                // Handle logout logic here
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Logged out successfully')),
-                );
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logged out successfully')),
+                  );
+                } catch (e) {
+                  // Even if Google Sign-In logout fails, still clear local storage
+                  await TokenStorage().clearToken();
+                  
+                  if (!context.mounted) return;
+                  
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => LoginPage()),
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logged out (with some issues)')),
+                  );
+                }
               },
               child: Text(
                 'Logout',

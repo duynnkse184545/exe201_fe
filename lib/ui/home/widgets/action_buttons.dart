@@ -1,10 +1,11 @@
+import 'package:exe201/ui/home/widgets/timer/timer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../extra/custom_dialog.dart';
 import '../../extra/custom_field.dart';
 import '../../extra/category_colors.dart';
 import '../../../provider/providers.dart';
-import '../../../model/balance/balance.dart';
+import '../../../provider/calendar_providers.dart';
 import '../../../model/expense/expense.dart';
 import '../../../model/expense_category/expense_category.dart';
 import '../../extra/header.dart';
@@ -380,60 +381,138 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
     }
   }
 
-  // Start Timer Dialog (you can expand this for task management)
+  // Start Timer Dialog with today's assignments
   void _showStartTimerDialog(BuildContext context) {
     showCustomBottomSheet(
       context: context,
       title: 'Start Timer',
       actionText: 'START',
       actionColor: const Color(0xFFEF4444),
-      content: Column(
-        children: [
-          const Text(
-            'Task: EXE Figma',
-            style: TextStyle(
-              color: Color(0xFFEF4444),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '2 hours',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
+      content: Consumer(
+        builder: (context, ref, child) {
+          final todayAssignmentsAsync = ref.watch(dayAssignmentsProvider);
           
-          // You can add timer configuration here
-          _buildTimerConfiguration(),
-        ],
+          return todayAssignmentsAsync.when(
+            loading: () => const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, stack) => SizedBox(
+              height: 200,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load assignments',
+                      style: TextStyle(color: Colors.red[600]),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(dayAssignmentsProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            data: (assignments) {
+              if (assignments.isEmpty) {
+                return const SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.assignment_outlined, size: 48, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No assignments due today',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Enjoy your free time!',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Get the first assignment for today
+              final assignment = assignments.first;
+              final focusTime = _calculateFocusTime(assignment.estimatedTime);
+              final breakTime = _calculateBreakTime(assignment.estimatedTime);
+
+              return Column(
+                children: [
+                  Text(
+                    'Task: ${assignment.title}',
+                    style: const TextStyle(
+                      color: Color(0xFFEF4444),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${assignment.estimatedTime} ${assignment.estimatedTime == 1 ? 'hour' : 'hours'}',
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  if (assignment.description != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      assignment.description!,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  
+                  // Timer configuration
+                  _buildTimerConfiguration(focusTime, breakTime),
+                ],
+              );
+            },
+          );
+        },
       ),
       onActionPressed: () => _handleStartTimer(context),
     );
   }
 
-  Widget _buildTimerConfiguration() {
+  Widget _buildTimerConfiguration(int focusTime, int breakTime) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Column(
+      child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Focus Time'),
-              Text('25 min'),
+              const Text('Focus Time'),
+              Text('$focusTime min'),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Break Time'),
-              Text('5 min'),
+              const Text('Break Time'),
+              Text('$breakTime min'),
             ],
           ),
         ],
@@ -441,13 +520,59 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
     );
   }
 
+  // Calculate focus time based on estimated hours (Pomodoro technique)
+  int _calculateFocusTime(int estimatedHours) {
+    // For longer tasks, use 25-minute focus sessions
+    // For shorter tasks (1 hour), use 15-minute sessions
+    if (estimatedHours <= 1) {
+      return 15;
+    } else if (estimatedHours <= 2) {
+      return 20;
+    } else {
+      return 25;
+    }
+  }
+
+  // Calculate break time based on estimated hours
+  int _calculateBreakTime(int estimatedHours) {
+    // Shorter breaks for shorter tasks
+    if (estimatedHours <= 1) {
+      return 3;
+    } else if (estimatedHours <= 2) {
+      return 5;
+    } else {
+      return 5;
+    }
+  }
+
   Future<void> _handleStartTimer(BuildContext context) async {
     try {
-      // TODO: Implement timer logic
-      // You could integrate with a task management system
+      // Get today's assignments
+      final todayAssignments = await ref.read(dayAssignmentsProvider.future);
       
+      if (todayAssignments.isEmpty) {
+        _showErrorSnackBar(context, 'No assignments available for today');
+        return;
+      }
+
+      // Get the first assignment
+      final assignment = todayAssignments.first;
+      final focusTime = _calculateFocusTime(assignment.estimatedTime);
+      final breakTime = _calculateBreakTime(assignment.estimatedTime);
+      
+      // Close the dialog
       Navigator.of(context).pop();
-      _showSuccessSnackBar(context, 'Timer started!');
+      
+      // Navigate to timer page
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => TimerPage(
+            assignment: assignment,
+            focusMinutes: focusTime,
+            breakMinutes: breakTime,
+          ),
+        ),
+      );
       
     } catch (e) {
       _showErrorSnackBar(context, 'Failed to start timer: ${e.toString()}');

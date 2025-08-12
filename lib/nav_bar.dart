@@ -1,26 +1,28 @@
 import 'package:exe201/ui/budget/budget.dart';
 import 'package:exe201/ui/calendar/calendar.dart';
 import 'package:exe201/ui/community/community.dart';
+import 'package:exe201/ui/home/widgets/calendarSummary.dart';
 import 'package:exe201/ui/user/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'provider/providers.dart';
 import 'ui/home/home.dart';
 
-class BottomTab extends StatefulWidget {
+class BottomTab extends ConsumerStatefulWidget {
   const BottomTab({super.key});
 
   @override
-  State<BottomTab> createState() => _BottomTabState();
+  ConsumerState<BottomTab> createState() => _BottomTabState();
 }
 
-class _BottomTabState extends State<BottomTab> {
+class _BottomTabState extends ConsumerState<BottomTab> {
   int _currentIndex = 0;
   late final PageController _pageController;
 
   final List<Widget> _tabs = [
     const HomeTab(),
     const BudgetTab(),
-    const CommunityTab(),
     const CalendarTab(),
     const UserTab(),
   ];
@@ -56,7 +58,6 @@ class _BottomTabState extends State<BottomTab> {
     final icons = [
       Icons.home,
       Icons.credit_card_outlined,
-      Icons.people_sharp,
       Icons.calendar_month_outlined,
       Icons.person_2_rounded,
     ];
