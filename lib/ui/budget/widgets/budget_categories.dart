@@ -268,11 +268,11 @@ class _CategoriesSectionState extends ConsumerState<CategoriesSection> {
                 'Categories',
                 style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
               ),
-              FloatingActionButton.small(
-                onPressed: () {},
-                backgroundColor: Theme.of(context).primaryColor,
-                child: const Icon(Icons.add, color: Colors.white),
-              ),
+              // FloatingActionButton.small(
+              //   onPressed: () {},
+              //   backgroundColor: Theme.of(context).primaryColor,
+              //   child: const Icon(Icons.add, color: Colors.white),
+              // ),
             ],
           ),
         ),

@@ -123,33 +123,12 @@ class _ProfileUpdatePageState extends ConsumerState<ProfileUpdatePage> {
     });
 
     try {
-      // Handle image storage properly
-      String? imageUrl = _currentImageUrl;
-      
-      if (_selectedImage != null) {
-        // Get user ID for image storage
-        final TokenStorage tokenStorage = TokenStorage();
-        final String? userId = await tokenStorage.getUserId();
-        
-        if (userId != null) {
-          // Save image permanently to app documents directory
-          final String? permanentPath = await ImageStorage.saveImagePermanently(_selectedImage!, userId);
-          if (permanentPath != null) {
-            imageUrl = permanentPath;
-            print('Image saved permanently at: $permanentPath');
-          } else {
-            throw Exception('Failed to save image permanently');
-          }
-        } else {
-          throw Exception('User ID not found');
-        }
-      }
-
+      // Use the new file upload method
       await ref.read(userNotifierProvider.notifier).updateProfile(
         fullName: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         doB: _selectedDate,
-        img: imageUrl,
+        img: _selectedImage, // Send the file directly
       );
 
       if (mounted) {

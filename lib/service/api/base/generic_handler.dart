@@ -44,9 +44,12 @@ abstract class ApiService<T, ID> {
     final path = customPath != null? '$endpoint/$customPath' : endpoint;
     try {
       print('path $path');
-      final jsonData = toJson(data);
-      debugPrint(jsonData.toString());
-      final response = await dio.post(path, data: jsonData);
+
+      // Handle FormData vs JSON
+      final requestData = _prepareRequestData(data);
+      debugPrint(requestData.toString());
+
+      final response = await dio.post(path, data: requestData);
       print('Response: ${response.data['data']}');
       return fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -63,8 +66,9 @@ abstract class ApiService<T, ID> {
   Future<T> update<TRequest>(TRequest data, {String? customPath}) async {
     final path = customPath != null? '$endpoint/$customPath' : endpoint;
     try {
-      final jsonData = toJson(data);
-      final response = await dio.put(path, data: jsonData);
+      // Handle FormData vs JSON
+      final requestData = _prepareRequestData(data);
+      final response = await dio.put(path, data: requestData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');
@@ -73,8 +77,9 @@ abstract class ApiService<T, ID> {
 
   Future<T> updateById<TRequest>(ID id, TRequest data) async {
     try {
-      final jsonData = toJson(data);
-      final response = await dio.put('$endpoint/$id', data: jsonData);
+      // Handle FormData vs JSON
+      final requestData = _prepareRequestData(data);
+      final response = await dio.put('$endpoint/$id', data: requestData);
       return fromJson(response.data['data']);
     } on DioException catch (e) {
       throw Exception('PUT failed: ${_formatError(e)}');
@@ -87,6 +92,17 @@ abstract class ApiService<T, ID> {
     } on DioException catch (e) {
       throw Exception('DELETE failed: ${_formatError(e)}');
     }
+  }
+
+  // Helper method to determine if data should be sent as FormData or JSON
+  dynamic _prepareRequestData<TRequest>(TRequest data) {
+    // If it's already FormData, send it as-is
+    if (data is FormData) {
+      return data;
+    }
+
+    // Otherwise, convert to JSON
+    return toJson(data);
   }
 
   String _formatError(DioException e) {

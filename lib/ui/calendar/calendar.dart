@@ -552,7 +552,7 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  'Est: ${assignment.estimatedTime ?? 0}h',
+                                                  'Estimated for: ${assignment.estimatedTime ?? 0}h',
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 11,

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../model/balance/balance.dart';
 import '../../../model/expense/expense.dart';
 import '../../../model/expense_category/expense_category.dart';
@@ -258,16 +259,7 @@ class RecentTransactionsSection extends ConsumerWidget {
               );
             }
 
-            return Column(
-              children: transactions.map((tx) => TransactionItem(
-                title: tx['title'] as String,
-                subtitle: tx['subtitle'] as String,
-                date: tx['date'] as String,
-                amount: tx['amount'] as String,
-                color: tx['color'] as Color,
-                icon: tx['icon'] as String,
-              )).toList(),
-            );
+            return _buildSlidableTransactions(transactions);
           },
         ),
       ],
@@ -311,5 +303,120 @@ class RecentTransactionsSection extends ConsumerWidget {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[date.month - 1]} ${date.day}';
+  }
+
+  Widget _buildSlidableTransactions(List<Map<String, dynamic>> transactions) {
+    if (transactions.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SlidableTransactionWidget(transactions: transactions);
+  }
+}
+
+class SlidableTransactionWidget extends StatefulWidget {
+  final List<Map<String, dynamic>> transactions;
+
+  const SlidableTransactionWidget({
+    super.key,
+    required this.transactions,
+  });
+
+  @override
+  State<SlidableTransactionWidget> createState() => _SlidableTransactionWidgetState();
+}
+
+class _SlidableTransactionWidgetState extends State<SlidableTransactionWidget> {
+  late ScrollController _scrollController;
+  double _scrollPosition = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    setState(() {
+      _scrollPosition = _scrollController.offset;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const double itemHeight = 80.0;
+    final double maxHeight = 300.0; // Maximum height for the container
+    final double contentHeight = widget.transactions.length * itemHeight;
+    final double containerHeight = contentHeight > maxHeight ? maxHeight : contentHeight;
+    
+    return Row(
+      children: [
+        // Scrollable transaction list - takes most space
+        Expanded(
+          child: SizedBox(
+            height: containerHeight,
+            child: ListView.builder(
+              controller: _scrollController,
+              itemCount: widget.transactions.length,
+              itemBuilder: (context, index) {
+                final tx = widget.transactions[index];
+                return TransactionItem(
+                  title: tx['title'] as String,
+                  subtitle: tx['subtitle'] as String,
+                  date: tx['date'] as String,
+                  amount: tx['amount'] as String,
+                  color: tx['color'] as Color,
+                  icon: tx['icon'] as String,
+                );
+              },
+            ),
+          ),
+        ),
+        
+        // Side indicator - vertical scrollbar style (only show if content is scrollable)
+        if (contentHeight > maxHeight) ...[
+          Container(
+            width: 4,
+            height: containerHeight,
+            margin: const EdgeInsets.only(left: 8),
+            child: Stack(
+              children: [
+                // Background track
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Active indicator
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 100),
+                  top: _scrollController.hasClients 
+                    ? (_scrollPosition / _scrollController.position.maxScrollExtent) * (containerHeight - 40)
+                    : 0,
+                  child: Container(
+                    width: 4,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

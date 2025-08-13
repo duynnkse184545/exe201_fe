@@ -561,9 +561,9 @@ class UserTab extends ConsumerWidget {
   }
 
   Future<void> _launchFacebookPage() async {
-    const String facebookUrl = 'https://www.facebook.com/yourpage'; // Replace with your Facebook page URL
+    const String facebookUrl = 'https://www.facebook.com/share/1B7x6SvKeV/'; // Replace with your Facebook page URL
     final Uri url = Uri.parse(facebookUrl);
-    
+
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -576,7 +576,7 @@ class UserTab extends ConsumerWidget {
   }
 
   Future<void> _launchInstagramPage() async {
-    const String instagramUrl = 'https://www.instagram.com/yourpage'; // Replace with your Instagram page URL
+    const String instagramUrl = 'https://www.instagram.com/yunibuddy/?fbclid=IwY2xjawMJWjhleHRuA2FlbQIxMABicmlkETFVb2VsRThqbHRpMjhoeTYwAR5z_YYIRDpk4mhyKIus4M6w8O4W337cuGngxcL94BhuihEKOYSZk93TmMIrjQ_aem_BYEVr4dmsqkFl-VqsZmnsQ'; // Replace with your Instagram page URL
     final Uri url = Uri.parse(instagramUrl);
     
     try {
