@@ -112,14 +112,14 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
                 label: 'Amount',
                 controller: amountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                enabled: selectedCategoryId != null,
+                enabled: selectedCategoryId != null && !_isBudgetInWarningState(),
               ),
               const SizedBox(height: 16),
 
               buildFormField(
                 label: 'Description',
                 controller: descriptionController,
-                enabled: selectedCategoryId != null,
+                enabled: selectedCategoryId != null && !_isBudgetInWarningState(),
               ),
               const SizedBox(height: 16),
 
@@ -356,6 +356,26 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
         return;
       }
 
+      // Check if budget exists and is valid for this category
+      final existingBudget = balanceData.budgets
+          .where((b) => b.categoryId == selectedCategoryId)
+          .firstOrNull;
+
+      if (existingBudget == null || existingBudget.budgetAmount <= 0) {
+        _showErrorSnackBar(context, 'Please set a budget for this category first before adding expenses.');
+        return;
+      }
+
+      // Check if adding this expense would exceed the budget
+      final currentSpent = balanceData.expenses
+          .where((e) => e.exCid == selectedCategoryId)
+          .fold(0.0, (sum, expense) => sum + expense.amount);
+
+      if (currentSpent + amount > existingBudget.budgetAmount) {
+        _showErrorSnackBar(context, 'This expense would exceed your budget. Current: ${formatCurrency(currentSpent)}, Budget: ${formatCurrency(existingBudget.budgetAmount)}');
+        return;
+      }
+
       final defaultAccount = balanceData.accounts.first;
       
       // Create expense request
@@ -390,9 +410,10 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
       actionColor: const Color(0xFFEF4444),
       content: Consumer(
         builder: (context, ref, child) {
-          final todayAssignmentsAsync = ref.watch(dayAssignmentsProvider);
+          // Get today's assignments using the same logic as handleStartTimer
+          final assignmentsAsync = ref.watch(assignmentsProvider);
           
-          return todayAssignmentsAsync.when(
+          return assignmentsAsync.when(
             loading: () => const SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
@@ -411,14 +432,22 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      onPressed: () => ref.refresh(dayAssignmentsProvider),
+                      onPressed: () => ref.refresh(assignmentsProvider),
                       child: const Text('Retry'),
                     ),
                   ],
                 ),
               ),
             ),
-            data: (assignments) {
+            data: (allAssignments) {
+              // Filter assignments for today (same logic as handleStartTimer)
+              final today = DateTime.now();
+              final assignments = allAssignments.where((assignment) =>
+                assignment.dueDate.year == today.year &&
+                assignment.dueDate.month == today.month &&
+                assignment.dueDate.day == today.day
+              ).toList();
+              
               if (assignments.isEmpty) {
                 return const SizedBox(
                   height: 200,
@@ -548,8 +577,16 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
   Future<void> _handleStartTimer(BuildContext context) async {
     try {
       // Get today's assignments
-      final todayAssignments = await ref.read(dayAssignmentsProvider.future);
-      
+      final today = DateTime.now();
+      final allAssignments = await ref.watch(assignmentsProvider.future);
+
+      // Filter assignments for today
+      final todayAssignments = allAssignments.where((assignment) =>
+      assignment.dueDate.year == today.year &&
+          assignment.dueDate.month == today.month &&
+          assignment.dueDate.day == today.day
+      ).toList();
+
       if (todayAssignments.isEmpty) {
         _showErrorSnackBar(context, 'No assignments available for today');
         return;
@@ -624,7 +661,7 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
                 formatCurrency(amount.toDouble()),
                 style: const TextStyle(fontSize: 15),
               ),
-              onPressed: selectedCategoryId != null 
+              onPressed: selectedCategoryId != null && !_isBudgetInWarningState()
                   ? () => controller.text = amount.toString()
                   : null,
               backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -814,6 +851,35 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
             );
           },
         );
+      },
+    );
+  }
+
+  // Helper method to check if budget is in warning state (red - no budget or over budget)
+  bool _isBudgetInWarningState() {
+    if (selectedCategoryId == null) return false;
+    
+    final balanceAsync = ref.read(balanceNotifierProvider);
+    return balanceAsync.when(
+      loading: () => false,
+      error: (_, __) => true, // Treat error as warning state
+      data: (balance) {
+        // Find budget for selected category
+        final budget = balance.budgets
+            .where((b) => b.categoryId == selectedCategoryId)
+            .firstOrNull;
+        
+        if (budget == null || budget.budgetAmount <= 0) {
+          return true; // No budget set - warning state
+        }
+
+        // Check if budget is over 100% used (exceeded)
+        final remainingAmount = budget.remainingAmount;
+        final budgetAmount = budget.budgetAmount;
+        final usedAmount = budgetAmount - remainingAmount;
+        final usedPercentage = (usedAmount / budgetAmount * 100).clamp(0, 100);
+        
+        return usedPercentage >= 100; // Budget exceeded - warning state
       },
     );
   }

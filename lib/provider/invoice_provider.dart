@@ -1,0 +1,30 @@
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../model/invoice.dart';
+import 'service_providers.dart';
+
+part 'invoice_provider.g.dart';
+
+@riverpod
+class UserInvoiceNotifier extends _$UserInvoiceNotifier {
+  @override
+  Future<Invoice?> build() async {
+    final invoiceService = ref.watch(invoiceServiceProvider);
+    try {
+      final invoice = await invoiceService.getUserInvoice();
+      return invoice;
+    } catch (e) {
+      print('Failed to load user invoice: $e');
+      return null;
+    }
+  }
+}
+
+@riverpod
+bool hasUserInvoice(HasUserInvoiceRef ref) {
+  final invoiceAsync = ref.watch(userInvoiceNotifierProvider);
+  return invoiceAsync.when(
+    data: (invoice) => invoice != null,
+    loading: () => false,
+    error: (_, __) => false,
+  );
+}

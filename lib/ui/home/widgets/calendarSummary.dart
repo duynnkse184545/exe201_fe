@@ -142,10 +142,18 @@ class CalendarSummary extends ConsumerWidget {
                     currentMonth.month == today.month &&
                     currentMonth.year == today.year;
 
+            // Check if the date is in the past
+            final currentDate = DateTime(currentMonth.year, currentMonth.month, day);
+            final todayDate = DateTime(today.year, today.month, today.day);
+            final isPastDate = currentDate.isBefore(todayDate);
+
             // Determine tile color based on the image pattern
             Color tileColor = const Color(0xFFE0E0E0);
 
-            if (hasEvents && hasAssignments) {
+            // If it's a past date, always use grey regardless of events/assignments
+            if (isPastDate) {
+              tileColor = const Color(0xFFE0E0E0); // Grey for past dates
+            } else if (hasEvents && hasAssignments) {
               return Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
@@ -158,12 +166,13 @@ class CalendarSummary extends ConsumerWidget {
                 ),
               );
             } else if (hasEvents) {
-              tileColor = const Color(0xFF5C6BC0); // Blue
+              tileColor = const Color(0xff6CB28E); // Green for events
             } else if (hasAssignments) {
-              tileColor = const Color(0xFFFF7043); // Orange/red
+              tileColor = const Color(0xFFFF7043); // Orange for assignments
             }
 
-            if (isToday && hasEvents) {
+            // Handle today's special cases (only if not past date)
+            if (isToday && hasEvents && !isPastDate) {
               Color eventColor = Theme.of(context).primaryColor;
               return Container(
                 decoration: BoxDecoration(
@@ -176,7 +185,7 @@ class CalendarSummary extends ConsumerWidget {
                   ),
                 ),
               );
-            } else if (isToday) {
+            } else if (isToday && !isPastDate) {
               tileColor = Theme.of(context).primaryColor;
             }
 

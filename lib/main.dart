@@ -1,20 +1,30 @@
 import 'package:exe201/nav_bar.dart';
 import 'package:exe201/ui/auth_wrapper.dart';
 import 'package:exe201/ui/login/login_ui.dart';
+import 'package:exe201/service/ads/admob_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() => runApp(
-  ProviderScope(
-    child: TvFApp(),
-  ),
-);
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize AdMob
+  await AdMobService.initialize();
+  
+  runApp(
+    ProviderScope(
+      child: TvFApp(),
+    ),
+  );
+}
 
 class TvFApp extends StatelessWidget {
   const TvFApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Preload ads when app starts
+    AdMobService().preloadAds();
     return MaterialApp(
       title: 'Financial Management',
       theme: ThemeData(

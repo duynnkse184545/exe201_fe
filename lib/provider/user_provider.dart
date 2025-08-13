@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:io';
 import '../model/user/user.dart';
 import '../service/api/user_service.dart';
 import 'service_providers.dart';
@@ -23,7 +24,7 @@ class UserNotifier extends _$UserNotifier {
     String? fullName,
     String? email,
     DateTime? doB,
-    String? img,
+    File? img,
   }) async {
     final currentUser = state.value;
     if (currentUser == null) return;

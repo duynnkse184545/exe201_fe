@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
+import 'dart:io';
 import 'base/generic_handler.dart';
 import '../../model/user/user.dart';
 import 'dto/auth_response.dart';
@@ -28,10 +30,31 @@ class UserService extends ApiService<User, String> {
     }
   }
 
-
   Future<User> updateUser(UserRequest updates) async {
     try {
-      return await update(updates, customPath: 'update-account');
+      var formData = FormData();
+
+      if (updates.fullName != null) {
+        formData.fields.add(MapEntry('fullName', updates.fullName!));
+      }
+      if (updates.email != null) {
+        formData.fields.add(MapEntry('email', updates.email!));
+      }
+      if (updates.doB != null) {
+        formData.fields.add(MapEntry('doB', updates.doB!.toIso8601String()));
+      }
+      if (updates.img != null) {
+        formData.files.add(MapEntry(
+            'img',
+            await MultipartFile.fromFile(
+              updates.img!.path,
+              filename: updates.img!.path.split('/').last,
+              contentType: MediaType('image', 'jpeg'),
+        )));
+      }
+
+      // Now you can use the generic update method with FormData
+      return await update(formData, customPath: 'update-account');
     } catch (e) {
       print(e.toString());
       throw Exception('Failed to update user: $e');
@@ -58,17 +81,17 @@ class UserService extends ApiService<User, String> {
         'email': email,
         'code': code,
       };
-      
+
       print('DEBUG - Verify Email Request:');
       print('URL: $url');
       print('Data: $requestData');
-      
+
       final response = await dio.post(url, data: requestData);
-      
+
       print('DEBUG - Verify Email Response:');
       print('Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
-      
+
       return response.data['message'] ?? 'Email verified successfully';
     } catch (e) {
       print('DEBUG - Verify Email Error:');
@@ -89,17 +112,17 @@ class UserService extends ApiService<User, String> {
       final requestData = {
         'email': email,
       };
-      
+
       print('DEBUG - Resend Verification Request:');
       print('URL: $url');
       print('Data: $requestData');
-      
+
       final response = await dio.post(url, data: requestData);
-      
+
       print('DEBUG - Resend Verification Response:');
       print('Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
-      
+
       return response.data['message'] ?? 'Verification code sent successfully';
     } catch (e) {
       print('DEBUG - Resend Verification Error:');
@@ -120,17 +143,17 @@ class UserService extends ApiService<User, String> {
       final requestData = {
         'email': email,
       };
-      
+
       print('DEBUG - Send Forgot Password Code Request:');
       print('URL: $url');
       print('Data: $requestData');
-      
+
       final response = await dio.post(url, data: requestData);
-      
+
       print('DEBUG - Send Forgot Password Code Response:');
       print('Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
-      
+
       return response.data['message'] ?? 'Verification code sent to your email';
     } catch (e) {
       print('DEBUG - Send Forgot Password Code Error:');
@@ -153,17 +176,17 @@ class UserService extends ApiService<User, String> {
         'code': code,
         'newPassword': newPassword,
       };
-      
+
       print('DEBUG - Reset Password With Code Request:');
       print('URL: $url');
       print('Data: $requestData');
-      
+
       final response = await dio.post(url, data: requestData);
-      
+
       print('DEBUG - Reset Password With Code Response:');
       print('Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
-      
+
       return response.data['message'] ?? 'Password reset successfully';
     } catch (e) {
       print('DEBUG - Reset Password With Code Error:');
@@ -182,13 +205,13 @@ class UserService extends ApiService<User, String> {
     try {
       final url = '$endpoint/login-google';
       final requestData = {'idToken': idToken};
-      
+
       print('DEBUG - Google Login Request:');
       print('URL: $url');
       print('Data: $requestData');
-      
+
       final response = await dio.post(url, data: requestData);
-      
+
       print('DEBUG - Google Login Response:');
       print('Status Code: ${response.statusCode}');
       print('Response Data: ${response.data}');
@@ -198,7 +221,7 @@ class UserService extends ApiService<User, String> {
       if (authResponse.token.isNotEmpty) {
         await _tokenStorage.saveToken(authResponse.token);
       }
-      
+
       return authResponse;
     } catch (e) {
       print('DEBUG - Google Login Error:');

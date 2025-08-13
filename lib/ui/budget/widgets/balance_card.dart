@@ -147,18 +147,6 @@ class _BalanceCardState extends ConsumerState<BalanceCard> with PressedStateMixi
         "action": data.isCurrentMonth ? () => _showIncomeDialog(context, "External Income", false) : null,
         "isAnimated": false,
       },
-      {
-        "title": "Expenses",
-        "amount": formatCurrency(data.totalExpenses),
-        "action": () async => debugPrint("Tapped: expenses"),
-        "isAnimated": false,
-      },
-      {
-        "title": data.isPastMonth ? "Net Amount (Final)" : "Net Amount",
-        "amount": formatCurrency(data.netAmount),
-        "action": () async => debugPrint("Tapped: net amount"),
-        "isAnimated": false,
-      },
     ];
 
     return Container(

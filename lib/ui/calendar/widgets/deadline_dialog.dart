@@ -192,7 +192,7 @@ class DeadlineDialog {
     final roundedMinutes = ((minimumDateTime.minute / 5).ceil() * 5) % 60;
     final roundedHour = minimumDateTime.hour + (roundedMinutes == 0 && minimumDateTime.minute > 0 ? 1 : 0);
     final initialDateTime = DateTime(minimumDateTime.year, minimumDateTime.month, minimumDateTime.day, roundedHour, roundedMinutes);
-    
+
     // Ensure initialDateTime is never before minimumDateTime
     final safeInitialDateTime = initialDateTime.isBefore(minimumDateTime) ? minimumDateTime : initialDateTime;
     DateTime selectedDateTime = safeInitialDateTime;
@@ -200,6 +200,7 @@ class DeadlineDialog {
     return StatefulBuilder(
       builder: (context, setState) {
         return TextField(
+          // Use the actual controller values, not a new controller
           controller: TextEditingController(
             text: '${_dateController.text} at ${_timeController.text}',
           ),
@@ -230,11 +231,7 @@ class DeadlineDialog {
                           TextButton(
                             child: const Text("Done"),
                             onPressed: () {
-                              // Store the actual selected DateTime for later use
-                              _selectedDateTime = selectedDateTime;
-                              _dateController.text = _formatDate(selectedDateTime);
-                              _timeController.text = _formatTime(selectedDateTime);
-                              setState(() {}); // Update the UI
+                              // Just close the bottom sheet since values are already updated
                               Navigator.of(context).pop();
                             },
                           ),
@@ -266,6 +263,12 @@ class DeadlineDialog {
                             } else {
                               selectedDateTime = dateTime;
                             }
+
+                            // Update controllers and state immediately as user scrolls
+                            _selectedDateTime = selectedDateTime;
+                            _dateController.text = _formatDate(selectedDateTime);
+                            _timeController.text = _formatTime(selectedDateTime);
+                            setState(() {}); // Update the TextField text in real-time
                           },
                         ),
                       ),
