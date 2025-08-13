@@ -3,10 +3,12 @@ import 'package:exe201/ui/login/password_reset.dart';
 import 'package:exe201/service/storage/token_storage.dart';
 import 'package:exe201/service/google_sign_in_service.dart';
 import 'package:flutter/material.dart';
-import 'feedback_screen.dart';
+import 'review_rating/reviews_main_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../provider/providers.dart';
 import '../extra/header.dart';
+import '../extra/dialog_with_ads.dart';
 import 'membership_plan/membership_plan.dart';
 import 'profile_update.dart';
 
@@ -293,29 +295,26 @@ class UserTab extends ConsumerWidget {
             SizedBox(height: 15),
 
             _buildMenuItem(
-              icon: Icons.settings,
+              icon: Icons.people,
               iconColor: Color(0xFF7B68EE),
               iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
-              title: 'Settings',
+              title: 'Community',
               onTap: () {
-                // Handle settings tap
-                _showComingSoonDialog(context, 'Settings');
+                _showCommunityDialog(context);
               },
             ),
 
             SizedBox(height: 15),
 
-
             _buildMenuItem(
-              icon: Icons.feedback,
+              icon: Icons.rate_review,
               iconColor: Color(0xFF7B68EE),
               iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
-              title: 'Provide Feedback',
+              title: 'Reviews & Feedback',
               onTap: () {
-                // Navigate to feedback screen
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => FeedbackScreen()),
+                  MaterialPageRoute(builder: (context) => ReviewsMainScreen()),
                 );
               },
             ),
@@ -406,21 +405,12 @@ class UserTab extends ConsumerWidget {
     );
   }
 
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
+  void _showComingSoonDialog(BuildContext context, String feature) async {
+    await AdMobDialogs.showAlertWithAd(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(feature),
-          content: Text('This feature is coming soon!'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
+      title: feature,
+      message: 'This feature is coming soon!',
+      confirmText: 'OK',
     );
   }
 
@@ -448,9 +438,10 @@ class UserTab extends ConsumerWidget {
                   if (!context.mounted) return;
                   
                   // Navigate to login page
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => LoginPage()),
+                        (Route<dynamic> route) => false,
                   );
 
                   // Show success message
@@ -482,6 +473,121 @@ class UserTab extends ConsumerWidget {
         );
       },
     );
+  }
+
+  void _showCommunityDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.people, color: Color(0xFF7B68EE)),
+              SizedBox(width: 8),
+              Text('Follow Us'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Connect with us on social media for updates and community discussions!',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildSocialButton(
+                    icon: Icons.facebook,
+                    label: 'Facebook',
+                    color: Color(0xFF1877F2),
+                    onTap: () => _launchFacebookPage(),
+                  ),
+                  _buildSocialButton(
+                    icon: Icons.camera_alt,
+                    label: 'Instagram',
+                    color: Color(0xFFE4405F),
+                    onTap: () => _launchInstagramPage(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSocialButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 32),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchFacebookPage() async {
+    const String facebookUrl = 'https://www.facebook.com/yourpage'; // Replace with your Facebook page URL
+    final Uri url = Uri.parse(facebookUrl);
+    
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch Facebook page';
+      }
+    } catch (e) {
+      print('Error launching Facebook: $e');
+    }
+  }
+
+  Future<void> _launchInstagramPage() async {
+    const String instagramUrl = 'https://www.instagram.com/yourpage'; // Replace with your Instagram page URL
+    final Uri url = Uri.parse(instagramUrl);
+    
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch Instagram page';
+      }
+    } catch (e) {
+      print('Error launching Instagram: $e');
+    }
   }
 
 }

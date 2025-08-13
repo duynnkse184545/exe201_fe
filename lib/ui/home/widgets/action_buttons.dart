@@ -390,9 +390,10 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
       actionColor: const Color(0xFFEF4444),
       content: Consumer(
         builder: (context, ref, child) {
-          final todayAssignmentsAsync = ref.watch(dayAssignmentsProvider);
+          // Get today's assignments using the same logic as handleStartTimer
+          final assignmentsAsync = ref.watch(assignmentsProvider);
           
-          return todayAssignmentsAsync.when(
+          return assignmentsAsync.when(
             loading: () => const SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
@@ -411,14 +412,22 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
-                      onPressed: () => ref.refresh(dayAssignmentsProvider),
+                      onPressed: () => ref.refresh(assignmentsProvider),
                       child: const Text('Retry'),
                     ),
                   ],
                 ),
               ),
             ),
-            data: (assignments) {
+            data: (allAssignments) {
+              // Filter assignments for today (same logic as handleStartTimer)
+              final today = DateTime.now();
+              final assignments = allAssignments.where((assignment) =>
+                assignment.dueDate.year == today.year &&
+                assignment.dueDate.month == today.month &&
+                assignment.dueDate.day == today.day
+              ).toList();
+              
               if (assignments.isEmpty) {
                 return const SizedBox(
                   height: 200,
@@ -548,8 +557,16 @@ class _ActionButtonsState extends ConsumerState<ActionButtons> {
   Future<void> _handleStartTimer(BuildContext context) async {
     try {
       // Get today's assignments
-      final todayAssignments = await ref.read(dayAssignmentsProvider.future);
-      
+      final today = DateTime.now();
+      final allAssignments = await ref.watch(assignmentsProvider.future);
+
+      // Filter assignments for today
+      final todayAssignments = allAssignments.where((assignment) =>
+      assignment.dueDate.year == today.year &&
+          assignment.dueDate.month == today.month &&
+          assignment.dueDate.day == today.day
+      ).toList();
+
       if (todayAssignments.isEmpty) {
         _showErrorSnackBar(context, 'No assignments available for today');
         return;

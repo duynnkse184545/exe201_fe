@@ -11,9 +11,10 @@ abstract class ApiService<T, ID> {
   T fromJson(Map<String, dynamic> json);
   Map<String, dynamic> toJson(dynamic data);
 
-  Future<List<T>> getAll() async {
+  Future<List<T>> getAll({String? customPath}) async {
+    final path = customPath != null? '$endpoint/$customPath' : endpoint;
     try {
-      final response = await dio.get(endpoint);
+      final response = await dio.get(path);
       final List<dynamic> dataList = response.data['data'];
       return dataList.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {

@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <queries>
   <!-- Allow your app to see any app that can VIEW HTTP links -->
     <intent>
@@ -13,7 +15,7 @@
     </queries>
 
     <application
-        android:label="exe201"
+        android:label="YUni Buddy"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -43,11 +45,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        
+
         <!-- Google Sign-In OAuth Client ID -->
         <meta-data
-            android:name="com.google.android.gms.auth.api.signin.GoogleSignInOptions.CLIENT_ID"
-            android:value="241894839268-l62128bkfajdjhv81ftplcl271kotjd5.apps.googleusercontent.com" />
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1510752918584749~6809908120"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

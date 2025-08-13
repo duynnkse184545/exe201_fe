@@ -2,7 +2,7 @@ import 'base/generic_handler.dart';
 import '../../model/review/review.dart';
 
 class ReviewService extends ApiService<Review, String> {
-  ReviewService() : super(endpoint: '/api/review');
+  ReviewService() : super(endpoint: '/api/Review');
 
   @override
   Review fromJson(Map<String, dynamic> json) => Review.fromJson(json);
@@ -27,7 +27,7 @@ class ReviewService extends ApiService<Review, String> {
   // Get all reviews (admin/public)
   Future<List<Review>> getAllReviews() async {
     try {
-      return await getAll();
+      return await getAll(customPath: 'all');
     } catch (e) {
       throw Exception('Failed to get all reviews: $e');
     }

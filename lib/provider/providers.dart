@@ -7,3 +7,4 @@ export 'monthly_computed_providers.dart';
 export 'monthly_summary_provider.dart';
 export 'selected_month_provider.dart';
 export 'user_provider.dart';
+export 'invoice_provider.dart';

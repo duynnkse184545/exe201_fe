@@ -9,6 +9,7 @@ import '../service/api/ai_service.dart';
 import '../service/financial/services.dart';
 import '../service/storage/balance_storage.dart';
 import '../service/api/user_service.dart';
+import '../service/api/invoice_service.dart';
 
 part 'service_providers.g.dart';
 
@@ -87,4 +88,9 @@ AIServiceApi aiService(Ref ref) {
 @riverpod
 UserService userService(Ref ref) {
   return UserService();
+}
+
+@riverpod
+InvoiceService invoiceService(Ref ref) {
+  return InvoiceService();
 }

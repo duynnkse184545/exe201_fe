@@ -104,11 +104,11 @@ class RecentTransactionsSection extends ConsumerWidget {
           const Text(
             'Recent Transactions',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 23,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 30),
           selectedDataAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(
