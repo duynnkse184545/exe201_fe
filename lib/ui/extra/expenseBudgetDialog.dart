@@ -45,6 +45,11 @@ class _UnifiedBudgetExpenseDialogState
   final _expenseAmountController = TextEditingController();
   final _expenseDescriptionController = TextEditingController();
 
+  // Error states for validation
+  String? _budgetAmountError;
+  String? _expenseAmountError;
+  String? _expenseDescriptionError;
+
   @override
   void initState() {
     super.initState();
@@ -243,6 +248,7 @@ class _UnifiedBudgetExpenseDialogState
             label: 'Budget Amount',
             controller: _budgetAmountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            errorText: _budgetAmountError,
           ),
 
           const SizedBox(height: 12),
@@ -275,13 +281,15 @@ class _UnifiedBudgetExpenseDialogState
             label: 'Amount',
             controller: _expenseAmountController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            errorText: _expenseAmountError,
           ),
 
           const SizedBox(height: 16),
 
           buildFormField(
-            label: 'Description (Optional)',
+            label: 'Description (Required)',
             controller: _expenseDescriptionController,
+            errorText: _expenseDescriptionError,
           ),
 
           const SizedBox(height: 24),
@@ -369,23 +377,32 @@ class _UnifiedBudgetExpenseDialogState
   Future<void> _handleBudgetAction() async {
     final amountText = _budgetAmountController.text.trim();
 
+    // Clear previous errors
+    setState(() {
+      _budgetAmountError = null;
+    });
+
+    bool valid = true;
+
     if (amountText.isEmpty) {
-      _showSnackBar('Please enter a budget amount');
-      return;
+      setState(() => _budgetAmountError = 'Please enter a budget amount');
+      valid = false;
+    } else {
+      final budgetAmount = double.tryParse(amountText);
+      if (budgetAmount == null || budgetAmount <= 0) {
+        setState(() => _budgetAmountError = 'Please enter a valid budget amount');
+        valid = false;
+      }
     }
 
-    final budgetAmount = double.tryParse(amountText);
-    if (budgetAmount == null || budgetAmount <= 0) {
-      _showSnackBar('Please enter a valid budget amount');
-      return;
-    }
+    if (!valid) return;
+
+    final budgetAmount = double.parse(amountText);
 
     try {
-      _showSnackBar('Setting budget...');
-
       final balanceData = ref.read(balanceNotifierProvider).value;
       if (balanceData == null || balanceData.accounts.isEmpty) {
-        _showSnackBar('No account found. Please create an account first.');
+        setState(() => _budgetAmountError = 'No account found. Please create an account first.');
         return;
       }
 
@@ -416,32 +433,75 @@ class _UnifiedBudgetExpenseDialogState
       widget.onActionComplete?.call();
       _showSnackBar('Budget set successfully!');
     } catch (e) {
-      _showSnackBar('Error setting budget: ${e.toString()}');
+      setState(() => _budgetAmountError = 'Error setting budget: ${e.toString()}');
     }
   }
 
   Future<void> _handleExpenseAction() async {
-    final amount = double.tryParse(_expenseAmountController.text.trim());
+    final amountText = _expenseAmountController.text.trim();
+    final description = _expenseDescriptionController.text.trim();
 
-    if (amount == null || amount <= 0) {
-      _showSnackBar('Please enter a valid amount');
-      return;
+    // Clear previous errors
+    setState(() {
+      _expenseAmountError = null;
+      _expenseDescriptionError = null;
+    });
+
+    bool valid = true;
+
+    if (amountText.isEmpty) {
+      setState(() => _expenseAmountError = 'Please enter an amount');
+      valid = false;
+    } else {
+      final amount = double.tryParse(amountText);
+      if (amount == null || amount <= 0) {
+        setState(() => _expenseAmountError = 'Please enter a valid amount');
+        valid = false;
+      }
     }
+
+    // Make description mandatory for expenses
+    if (description.isEmpty) {
+      setState(() => _expenseDescriptionError = 'Please enter a description for this expense');
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    final amount = double.parse(amountText);
 
     try {
       final balanceData = ref.read(balanceNotifierProvider).value;
 
       if (balanceData == null || balanceData.accounts.isEmpty) {
-        _showSnackBar('No account found. Please create an account first.');
+        setState(() => _expenseAmountError = 'No account found. Please create an account first.');
+        return;
+      }
+
+      // Check if budget exists and is valid for this category
+      final existingBudget = balanceData.budgets
+          .where((b) => b.categoryId == widget.categoryId)
+          .firstOrNull;
+
+      if (existingBudget == null || existingBudget.budgetAmount <= 0) {
+        setState(() => _expenseAmountError = 'Please set a budget for this category first before adding expenses.');
+        return;
+      }
+
+      // Check if adding this expense would exceed the budget
+      final currentSpent = balanceData.expenses
+          .where((e) => e.exCid == widget.categoryId)
+          .fold(0.0, (sum, expense) => sum + expense.amount);
+
+      if (currentSpent + amount > existingBudget.budgetAmount) {
+        setState(() => _expenseAmountError = 'This expense would exceed your budget. Current: ${_formatCurrency(currentSpent)}, Budget: ${_formatCurrency(existingBudget.budgetAmount)}');
         return;
       }
 
       final defaultAccount = balanceData.accounts.first;
       final expenseRequest = ExpenseRequest(
         amount: amount,
-        description: _expenseDescriptionController.text.trim().isEmpty
-            ? null
-            : _expenseDescriptionController.text.trim(),
+        description: description, // Now guaranteed to be non-empty
         exCid: widget.categoryId,
         accountId: defaultAccount.accountId,
       );
@@ -452,7 +512,7 @@ class _UnifiedBudgetExpenseDialogState
       widget.onActionComplete?.call();
       _showSnackBar('Expense added successfully!');
     } catch (e) {
-      _showSnackBar('Error adding expense: ${e.toString()}');
+      setState(() => _expenseAmountError = 'Error adding expense: ${e.toString()}');
     }
   }
 

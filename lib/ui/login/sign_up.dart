@@ -5,6 +5,7 @@ import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
 import '../extra/pin_verification_dialog.dart';
+import 'user_onboarding.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -364,7 +365,13 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
         title: 'Verify Your Email',
         onVerificationComplete: (success, code) {
           if (success) {
-            Navigator.pop(context); // Go back to login page
+            // Navigate to onboarding screen after successful verification
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const UserOnboardingPage(),
+              ),
+            );
           }
         },
       );
