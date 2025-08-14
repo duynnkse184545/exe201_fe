@@ -12,20 +12,20 @@ class InvoiceService extends ApiService<Invoice, String> {
 
   @override
   Map<String, dynamic> toJson(dynamic data) {
-    if (data is ExpenseCategory) return data.toJson();
+    if (data is Invoice) return data.toJson();
     if (data is Map<String, dynamic>) return data;
     throw ArgumentError('Unsupported data type for toJson: ${data.runtimeType}');
   }
 
-  Future<Invoice> getUserInvoice() async {
+  Future<List<Invoice>> getUserInvoice() async {
     try {
       final response = await dio.get('$endpoint/current-user');
-      final responseData = response.data['data'] as Map<String, dynamic>;
-      return fromJson(responseData);
+      final List<dynamic> dataList = response.data['data'];
+      return dataList.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } catch (e, stackTrace) {
       print('ERROR: Failed in getInvoice: $e');
       print('ERROR: Stack trace: $stackTrace');
-      throw Exception('Failed to get complete balance data: $e');
+      throw Exception('Failed to get Invoice data: $e');
     }
   }
 

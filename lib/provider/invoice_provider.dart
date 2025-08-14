@@ -7,16 +7,17 @@ part 'invoice_provider.g.dart';
 @riverpod
 class UserInvoiceNotifier extends _$UserInvoiceNotifier {
   @override
-  Future<Invoice?> build() async {
+  Future<List<Invoice>> build() async {
     final invoiceService = ref.watch(invoiceServiceProvider);
     try {
-      final invoice = await invoiceService.getUserInvoice();
-      return invoice;
+      final invoices = await invoiceService.getUserInvoice();
+      return invoices;
     } catch (e) {
       print('Failed to load user invoice: $e');
-      return null;
+      return [];
     }
   }
+
 }
 
 @riverpod
