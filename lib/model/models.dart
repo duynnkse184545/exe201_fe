@@ -14,7 +14,7 @@ export 'assignment/assignment.dart';
 export 'event_category/event_category.dart';
 export 'subject/subject.dart';
 export 'user/user.dart';
-export 'user/update_user_request.dart';
+//export 'user/update_user_request.dart';
 
 // Root level models (not using @freezed)
 export 'priority_level.dart';
