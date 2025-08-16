@@ -40,6 +40,7 @@ class ReviewService extends ApiService<Review, String> {
       final List<dynamic> dataList = response.data['data'];
       return dataList.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
+      return [];
       throw Exception('Failed to get user reviews: $e');
     }
   }

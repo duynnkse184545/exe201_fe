@@ -1,6 +1,7 @@
 import 'package:exe201/nav_bar.dart';
 import 'package:exe201/service/api/auth_service.dart';
 import 'package:exe201/service/api/exceptions/auth_exceptions.dart';
+import 'package:exe201/ui/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 
 import '../extra/custom_field.dart';
@@ -271,7 +272,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       // Login successful - navigate to main app
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => BottomTab()),
+        MaterialPageRoute(builder: (_) => AuthWrapper()),
       );
     } on UnverifiedEmailException catch (e) {
       if (!mounted) return;

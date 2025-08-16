@@ -28,9 +28,10 @@ abstract class User with _$User {
 @freezed
 abstract class UserRequest with _$UserRequest {
   const factory UserRequest({
+    String? userId,
     required String? fullName,
     required String userName,
-    required String email,
+    required String? email,
     @JsonKey(toJson: _dateToString, fromJson: _dateFromString) DateTime? doB,
     @JsonKey(fromJson: _fileFromJson, toJson: _fileToJson) File? img,
     required String? passwordHash,

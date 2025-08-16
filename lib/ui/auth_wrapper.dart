@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../nav_bar.dart';
 import '../service/storage/token_storage.dart';
 import 'login/login_ui.dart';
+import 'admin/admin_dashboard.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -14,6 +15,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   final TokenStorage _tokenStorage = TokenStorage();
   bool _isLoading = true;
   bool _isAuthenticated = false;
+  bool _isAdmin = false;
 
   @override
   void initState() {
@@ -27,20 +29,32 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final isValid = await _tokenStorage.isTokenValid();
       
       if (isValid) {
+        // Check if user is admin
+        final isAdmin = await _tokenStorage.isAdmin();
+        
         // Optional: Log user info for debugging
         final userId = await _tokenStorage.getUserId();
         final username = await _tokenStorage.getUsername();
-        print('Auto-login successful - User ID: $userId, Username: $username');
+        final roleId = await _tokenStorage.getUserRoleId();
+        print('Auto-login successful - User ID: $userId, Username: $username, Role: $roleId, IsAdmin: $isAdmin');
+        
+        setState(() {
+          _isAuthenticated = isValid;
+          _isAdmin = isAdmin;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isAuthenticated = false;
+          _isAdmin = false;
+          _isLoading = false;
+        });
       }
-      
-      setState(() {
-        _isAuthenticated = isValid;
-        _isLoading = false;
-      });
     } catch (e) {
       print('Error checking auth status: $e');
       setState(() {
         _isAuthenticated = false;
+        _isAdmin = false;
         _isLoading = false;
       });
     }
@@ -100,7 +114,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Navigate based on authentication status
-    return _isAuthenticated ? BottomTab() : LoginPage();
+    // Navigate based on authentication status and role
+    if (!_isAuthenticated) {
+      return LoginPage();
+    }
+    
+    // If user is admin (role = 1), show admin dashboard
+    if (_isAdmin) {
+      return AdminDashboard();
+    }
+    
+    // Otherwise show normal user interface
+    return BottomTab();
   }
 }

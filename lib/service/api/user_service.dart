@@ -34,6 +34,9 @@ class UserService extends ApiService<User, String> {
     try {
       var formData = FormData();
 
+      if (updates.userId != null) {
+        formData.fields.add(MapEntry('userId', updates.userId!));
+      }
       if (updates.fullName != null) {
         formData.fields.add(MapEntry('fullName', updates.fullName!));
       }
@@ -52,7 +55,7 @@ class UserService extends ApiService<User, String> {
               contentType: MediaType('image', 'jpeg'),
         )));
       }
-
+      print('formData ${formData}');
       // Now you can use the generic update method with FormData
       return await update(formData, customPath: 'update-account');
     } catch (e) {
@@ -69,6 +72,160 @@ class UserService extends ApiService<User, String> {
       return fromJson(response.data['data']);
     } catch (e) {
       throw Exception('Failed to get user by email: $e');
+    }
+  }
+
+  Future<List<User>> getAllUsers() async {
+    try {
+      return await getAll();
+    } catch (e) {
+      throw Exception('Failed to get user: $e');
+    }
+  }
+  /// Get user by ID (available in backend)
+  Future<User> getUserById(String userId) async {
+    try {
+      final response = await dio.get('$endpoint/$userId');
+      return fromJson(response.data['data'] as Map<String, dynamic>);
+    } catch (e, stackTrace) {
+      print('ERROR: Failed in getUserById: $e');
+      print('ERROR: Stack trace: $stackTrace');
+      throw Exception('Failed to get user by ID: $e');
+    }
+  }
+
+  /// Calculate user statistics from invoice data (since invoices contain userId)
+  Future<Map<String, dynamic>> calculateUserStatisticsFromInvoices() async {
+    try {
+      // Get all invoices to extract user information
+      final response = await dio.get('/api/Invoice');
+      final List<dynamic> invoiceList = response.data['data'];
+      
+      if (invoiceList.isEmpty) {
+        return {
+          'totalUsers': 0,
+          'activeUsers': 0,
+          'newUsersThisMonth': 0,
+          'userGrowthPercentage': 0.0,
+        };
+      }
+
+      // Extract unique user IDs from invoices
+      final Set<String> uniqueUserIds = {};
+      final Set<String> activeUserIds = {}; // Users with invoices in last 30 days
+      final Set<String> newUsersThisMonth = {}; // Users with first invoice this month
+      final Map<String, DateTime> userFirstInvoice = {};
+
+      final now = DateTime.now();
+      final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+      final currentMonth = now.month;
+      final currentYear = now.year;
+
+      for (final invoiceData in invoiceList) {
+        final userId = invoiceData['userId'] as String?;
+        final createdDateStr = invoiceData['createdDate'] as String?;
+        
+        if (userId != null && createdDateStr != null) {
+          uniqueUserIds.add(userId);
+          final createdDate = DateTime.parse(createdDateStr);
+          
+          // Track first invoice date for each user
+          if (!userFirstInvoice.containsKey(userId) || 
+              createdDate.isBefore(userFirstInvoice[userId]!)) {
+            userFirstInvoice[userId] = createdDate;
+          }
+          
+          // Active users (invoices in last 30 days)
+          if (createdDate.isAfter(thirtyDaysAgo)) {
+            activeUserIds.add(userId);
+          }
+          
+          // New users this month (first invoice this month)
+          if (createdDate.month == currentMonth && createdDate.year == currentYear) {
+            final firstInvoice = userFirstInvoice[userId]!;
+            if (firstInvoice.month == currentMonth && firstInvoice.year == currentYear) {
+              newUsersThisMonth.add(userId);
+            }
+          }
+        }
+      }
+
+      // Calculate growth percentage (mock calculation)
+      final growthPercentage = newUsersThisMonth.isNotEmpty ?
+          (newUsersThisMonth.length / uniqueUserIds.length * 100) : 0.0;
+
+      return {
+        'totalUsers': uniqueUserIds.length,
+        'activeUsers': activeUserIds.length,
+        'newUsersThisMonth': newUsersThisMonth.length,
+        'userGrowthPercentage': growthPercentage,
+      };
+    } catch (e) {
+      print('ERROR: Failed to calculate user statistics: $e');
+      return {
+        'totalUsers': 0,
+        'activeUsers': 0,
+        'newUsersThisMonth': 0,
+        'userGrowthPercentage': 0.0,
+      };
+    }
+  }
+
+  /// Calculate user growth data from invoice data
+  Future<List<Map<String, dynamic>>> calculateUserGrowthFromInvoices() async {
+    try {
+      final response = await dio.get('/api/Invoice');
+      final List<dynamic> invoiceList = response.data['data'];
+      
+      // Track first invoice date for each user by month
+      final Map<String, DateTime> userFirstInvoice = {};
+      final Map<int, Set<String>> newUsersByMonth = {};
+
+      // Initialize months
+      for (int i = 1; i <= 12; i++) {
+        newUsersByMonth[i] = <String>{};
+      }
+
+      for (final invoiceData in invoiceList) {
+        final userId = invoiceData['userId'] as String?;
+        final createdDateStr = invoiceData['createdDate'] as String?;
+        
+        if (userId != null && createdDateStr != null) {
+          final createdDate = DateTime.parse(createdDateStr);
+          
+          // Track first invoice date for each user
+          if (!userFirstInvoice.containsKey(userId) || 
+              createdDate.isBefore(userFirstInvoice[userId]!)) {
+            userFirstInvoice[userId] = createdDate;
+          }
+        }
+      }
+
+      // Count new users by month based on first invoice
+      for (final firstInvoiceDate in userFirstInvoice.values) {
+        final month = firstInvoiceDate.month;
+        final userId = userFirstInvoice.entries
+            .firstWhere((entry) => entry.value == firstInvoiceDate)
+            .key;
+        newUsersByMonth[month]?.add(userId);
+      }
+
+      // Generate cumulative user count
+      int cumulativeUsers = 0;
+      return List.generate(12, (index) {
+        final month = index + 1;
+        cumulativeUsers += newUsersByMonth[month]?.length ?? 0;
+        return {
+          'month': month,
+          'users': cumulativeUsers,
+        };
+      });
+    } catch (e) {
+      print('ERROR: Failed to calculate user growth: $e');
+      return List.generate(12, (index) => {
+        'month': index + 1,
+        'users': 0,
+      });
     }
   }
 

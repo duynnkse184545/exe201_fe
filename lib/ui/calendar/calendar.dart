@@ -18,6 +18,19 @@ class CalendarTab extends ConsumerStatefulWidget {
 class _CalendarTabState extends ConsumerState<CalendarTab> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  late ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -407,10 +420,12 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
               SizedBox(
                 height: 200, // Fixed height for scrollable area
                 child: Scrollbar(
+                  controller: _scrollController,
                   thumbVisibility: true,
                   thickness: 4,
                   radius: Radius.circular(2),
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
