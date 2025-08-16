@@ -5,8 +5,6 @@ class TokenStorage {
   final _storage = const FlutterSecureStorage();
   static const _keyToken = 'auth_token';
 
-  // Development token - set this to your actual token for testing
-  static const _developmentToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiJmMjllYThiMC1lNjA0LTQ3ZjYtYjA0OC1lYTI4ZDc0ZDk1MjkiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiIyIiwiZXhwIjoxNzUzNzM3NzE4LCJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo3MTQwIiwiYXVkIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6NzE0MCJ9.eX8tCv3PCwRUgPc0bczHDHllZPxUeW3OjEpO9KxME28';
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _keyToken, value: token);
@@ -15,11 +13,8 @@ class TokenStorage {
   Future<String?> getToken() async {
     // First try to get stored token
     final storedToken = await _storage.read(key: _keyToken);
-    print(storedToken);
     if (storedToken == null) {
-      // Automatically save the development token for future use
-      await saveToken(_developmentToken);
-      return _developmentToken;
+      return null;
     }
 
     return storedToken;
@@ -94,7 +89,6 @@ class TokenStorage {
   Future<List<String>?> getUserRoles() async {
     final decoded = await getDecodedToken();
     if (decoded == null) return null;
-
     // Handle different role claim formats
     final roles = decoded['roles'] ??
                   decoded['role'] ??
@@ -116,6 +110,34 @@ class TokenStorage {
   Future<dynamic> getClaim(String claimName) async {
     final decoded = await getDecodedToken();
     return decoded?[claimName];
+  }
+
+  /// Get user role ID from the token payload
+  Future<int?> getUserRoleId() async {
+    final decoded = await getDecodedToken();
+    if (decoded == null) return null;
+    // Check for role in different claim formats
+    final roleValue = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ??
+                     decoded['role'] ??
+                     decoded['roleId'];
+
+    if (roleValue == null) return null;
+
+    // Convert to int if it's a string
+    if (roleValue is String) {
+      return int.tryParse(roleValue);
+    } else if (roleValue is int) {
+      return roleValue;
+    }
+
+    return null;
+  }
+
+  /// Check if user is admin (role = 1)
+  Future<bool> isAdmin() async {
+    final roleId = await getUserRoleId();
+    print('role: $roleId');
+    return roleId == 1;
   }
 
   /// Check if the token is valid (exists and not expired)

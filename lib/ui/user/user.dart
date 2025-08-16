@@ -276,23 +276,39 @@ class UserTab extends ConsumerWidget {
 
             SizedBox(height: 25),
 
-            // Menu Items
-            _buildMenuItem(
-              icon: Icons.star,
-              iconColor: Color(0xFF7B68EE),
-              iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
-              title: 'Get Premium',
-              onTap: () {
-                // Handle premium tap
-                // _showComingSoonDialog(context, 'Get Premium');
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MemberPlan()),
+            // Menu Items - Hide Premium for Admin users
+            Consumer(
+              builder: (context, ref, child) {
+                final userAsync = ref.watch(userNotifierProvider);
+                return userAsync.when(
+                  data: (user) {
+                    final isAdmin = user?.roleId == 1;
+                    return Column(
+                      children: [
+                        // Only show Get Premium for non-admin users
+                        if (!isAdmin) ...[
+                          _buildMenuItem(
+                            icon: Icons.star,
+                            iconColor: Color(0xFF7B68EE),
+                            iconBgColor: Color(0xFF7B68EE).withValues(alpha: 0.1),
+                            title: 'Get Premium',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => MemberPlan()),
+                              );
+                            },
+                          ),
+                          SizedBox(height: 15),
+                        ],
+                      ],
+                    );
+                  },
+                  loading: () => SizedBox.shrink(),
+                  error: (_, __) => SizedBox.shrink(),
                 );
               },
             ),
-
-            SizedBox(height: 15),
 
             _buildMenuItem(
               icon: Icons.people,
@@ -561,7 +577,7 @@ class UserTab extends ConsumerWidget {
   }
 
   Future<void> _launchFacebookPage() async {
-    const String facebookUrl = 'https://www.facebook.com/share/1B7x6SvKeV/'; // Replace with your Facebook page URL
+    const String facebookUrl = 'https://www.facebook.com/profile.php?id=61576668819588'; // Replace with your Facebook page URL
     final Uri url = Uri.parse(facebookUrl);
 
     try {

@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../model/invoice.dart';
 import 'service_providers.dart';
@@ -21,11 +22,26 @@ class UserInvoiceNotifier extends _$UserInvoiceNotifier {
 }
 
 @riverpod
-bool hasUserInvoice(HasUserInvoiceRef ref) {
+@riverpod
+bool hasUserInvoice(Ref ref) {
   final invoiceAsync = ref.watch(userInvoiceNotifierProvider);
+
   return invoiceAsync.when(
-    data: (invoice) => invoice != null,
+    data: (invoices) {
+      if (invoices.isEmpty) return false;
+
+      // Find the most recent createdDate
+      final latestInvoice = invoices.reduce((a, b) =>
+      (a.createdDate!.isAfter(b.createdDate!)) ? a : b
+      );
+
+      final now = DateTime.now();
+      final difference = now.difference(latestInvoice.createdDate!).inDays;
+
+      return difference <= 30; // true if latest invoice is within 30 days
+    },
     loading: () => false,
     error: (_, __) => false,
   );
 }
+

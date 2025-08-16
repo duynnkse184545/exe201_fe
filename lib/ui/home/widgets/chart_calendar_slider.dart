@@ -19,7 +19,9 @@ class _ChartCalendarSliderState extends ConsumerState<ChartCalendarSlider> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    // Initialize PageController with the current state from the provider
+    final currentTab = ref.read(chartCalendarTabProvider);
+    _pageController = PageController(initialPage: currentTab);
   }
 
   @override

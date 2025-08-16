@@ -10,30 +10,56 @@ import '../../../provider/service_providers.dart';
 import '../../../provider/calendar_providers.dart';
 import '../../../service/api/base/id_generator.dart';
 
-class DeadlineDialog {
-  static final _dateController = TextEditingController();
-  static final _timeController = TextEditingController();
-  static final _nameController = TextEditingController();
-  static final _estimatedTimeController = TextEditingController();
-  static DateTime? _selectedDateTime;
+class DeadlineDialog extends StatefulWidget {
+  const DeadlineDialog({super.key});
+
+  @override
+  State<DeadlineDialog> createState() => _DeadlineDialogState();
 
   static void show(BuildContext context) {
-    // Initialize controllers with default values
-    _initializeDateTime();
-    
+    final dialogKey = GlobalKey<_DeadlineDialogState>();
+
     showCustomBottomSheet(
       context: context,
       title: 'Add Deadline',
       actionText: 'CREATE',
       actionColor: const Color(0xFF6366F1),
-      content: _buildContent(context),
+      content: DeadlineDialog(key: dialogKey),
       onActionPressed: () async {
-        await _createDeadline(context);
+        await dialogKey.currentState?._createDeadline();
       },
     );
   }
+}
 
-  static void _initializeDateTime() {
+class _DeadlineDialogState extends State<DeadlineDialog> {
+  final _dateController = TextEditingController();
+  final _timeController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _estimatedTimeController = TextEditingController();
+  DateTime? _selectedDateTime;
+
+  // Error states for validation
+  String? _nameError;
+  String? _estimatedTimeError;
+  String? _generalError;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDateTime();
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    _timeController.dispose();
+    _nameController.dispose();
+    _estimatedTimeController.dispose();
+    super.dispose();
+  }
+
+  void _initializeDateTime() {
     // Initialize with minimum allowed time (1 hour from now)
     final now = DateTime.now();
     final minimumDateTime = now.add(const Duration(hours: 1));
@@ -52,48 +78,90 @@ class DeadlineDialog {
   }
 
 
-  static Widget _buildContent(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildCombinedDateTimePickerField(context),
+        _buildCombinedDateTimePickerField(),
         const SizedBox(height: 16),
-        buildFormField(label: 'Assignment Title', controller: _nameController),
+        buildFormField(
+          label: 'Assignment Title', 
+          controller: _nameController,
+          errorText: _nameError,
+        ),
         const SizedBox(height: 16),
         buildFormField(
           label: 'Estimated Time (hours)', 
           controller: _estimatedTimeController,
           keyboardType: TextInputType.number,
-          hintText: 'Enter 1-24 hours',
+          hintText: 'Enter 1-10 hours',
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(2), // Limit to 2 digits (max 99, but validation will catch >24)
           ],
+          errorText: _estimatedTimeError,
         ),
+        
+        // General error display
+        if (_generalError != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _generalError!,
+                    style: TextStyle(
+                      color: Colors.red[700],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
 
-  static Future<void> _createDeadline(BuildContext context) async {
+  Future<void> _createDeadline() async {
     try {
       // Get ProviderContainer from context for Riverpod access
       final container = ProviderScope.containerOf(context);
       
+      // Clear previous errors
+      setState(() {
+        _nameError = null;
+        _estimatedTimeError = null;
+        _generalError = null;
+      });
+
+      bool valid = true;
+
       // Validate inputs
       if (_nameController.text.trim().isEmpty) {
-        _showError(context, 'Please enter an assignment title');
-        return;
+        setState(() => _nameError = 'Please enter an assignment title');
+        valid = false;
       }
 
-      // Parse the selected date and time
-      final selectedDateTime = _parseDateTime(_dateController.text, _timeController.text);
-      
       // Parse estimated time
       int? estimatedHours;
       if (_estimatedTimeController.text.trim().isNotEmpty) {
         estimatedHours = int.tryParse(_estimatedTimeController.text.trim());
-        if (estimatedHours == null || estimatedHours < 1 || estimatedHours > 24) {
-          _showError(context, 'Please enter a valid estimated time between 1 and 24 hours');
-          return;
+        if (estimatedHours == null || estimatedHours < 1 || estimatedHours > 10) {
+          setState(() => _estimatedTimeError = 'Please enter a valid estimated time between 1 and 10 hours');
+          valid = false;
         }
       }
 
@@ -102,14 +170,19 @@ class DeadlineDialog {
       final priorities = await container.read(prioritiesProvider.future);
       
       if (subjects.isEmpty) {
-        _showError(context, 'No subjects available. Please create a subject first.');
-        return;
+        setState(() => _generalError = 'No subjects available. Please create a subject first.');
+        valid = false;
       }
       
       if (priorities.isEmpty) {
-        _showError(context, 'No priorities available. Please create priorities first.');
-        return;
+        setState(() => _generalError = 'No priorities available. Please create priorities first.');
+        valid = false;
       }
+
+      if (!valid) return;
+
+      // Parse the selected date and time
+      final selectedDateTime = _parseDateTime(_dateController.text, _timeController.text);
 
       // Create assignment request object
       final assignmentRequest = AssignmentRequest(
@@ -127,7 +200,7 @@ class DeadlineDialog {
       container.invalidate(assignmentsProvider);
       container.invalidate(monthAssignmentsProvider);
 
-      if(!context.mounted) return;
+      if(!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Deadline "${_nameController.text.trim()}" created successfully!'),
@@ -137,11 +210,11 @@ class DeadlineDialog {
       
       Navigator.of(context).pop();
     } catch (e) {
-      _showError(context, 'Failed to create deadline: $e');
+      setState(() => _generalError = 'Failed to create deadline: $e');
     }
   }
 
-  static void _showError(BuildContext context, String message) {
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -150,7 +223,7 @@ class DeadlineDialog {
     );
   }
 
-  static DateTime _parseDateTime(String dateText, String timeText) {
+  DateTime _parseDateTime(String dateText, String timeText) {
     // Use the stored selected DateTime if available
     if (_selectedDateTime != null) {
       return _selectedDateTime!;
@@ -165,7 +238,7 @@ class DeadlineDialog {
     return DateTime(now.year, now.month, now.day, hour, minute);
   }
 
-  static String _formatDate(DateTime date) {
+  String _formatDate(DateTime date) {
     final now = DateTime.now();
     final currentYear = now.year;
     final dateYear = date.year;
@@ -179,11 +252,11 @@ class DeadlineDialog {
     }
   }
 
-  static String _formatTime(DateTime time) {
+  String _formatTime(DateTime time) {
     return DateFormat('HH:mm').format(time);
   }
 
-  static Widget _buildCombinedDateTimePickerField(BuildContext context) {
+  Widget _buildCombinedDateTimePickerField() {
     // Use consistent reference time to avoid timing issues
     final now = DateTime.now();
     // Set minimum time to 1 hour from now
