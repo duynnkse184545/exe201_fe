@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../model/user/user.dart';
+import '../../service/api/auth_service.dart';
+import '../../service/api/dto/auth_request.dart';
 import '../../service/api/user_service.dart';
 import '../extra/custom_field.dart';
 import '../extra/field_animation.dart';
@@ -340,6 +342,7 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
     try {
       final userService = UserService();
+      final authService = AuthService();
 
       final userCreate = UserRequest(
         fullName: "",
@@ -363,9 +366,12 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
         context: context,
         email: email,
         title: 'Verify Your Email',
-        onVerificationComplete: (success, code) {
+        onVerificationComplete: (success, code) async {
           if (success) {
-            // Navigate to onboarding screen after successful verification
+            await authService.login(
+              AuthRequest(username: username, password: password),
+            );
+            if(!mounted) return;
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

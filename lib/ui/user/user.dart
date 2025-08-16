@@ -276,17 +276,21 @@ class UserTab extends ConsumerWidget {
 
             SizedBox(height: 25),
 
-            // Menu Items - Hide Premium for Admin users
+            // Menu Items - Hide Premium for Admin users and users who already have premium
             Consumer(
               builder: (context, ref, child) {
                 final userAsync = ref.watch(userNotifierProvider);
+                final hasPaidInvoice = ref.watch(hasUserInvoiceProvider);
+                
                 return userAsync.when(
                   data: (user) {
                     final isAdmin = user?.roleId == 1;
+                    final shouldShowPremium = !isAdmin && !hasPaidInvoice;
+                    
                     return Column(
                       children: [
-                        // Only show Get Premium for non-admin users
-                        if (!isAdmin) ...[
+                        // Only show Get Premium for non-admin users who haven't paid
+                        if (shouldShowPremium) ...[
                           _buildMenuItem(
                             icon: Icons.star,
                             iconColor: Color(0xFF7B68EE),
