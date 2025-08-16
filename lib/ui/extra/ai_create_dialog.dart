@@ -71,25 +71,54 @@ class _AICreateDialogState extends ConsumerState<AICreateDialog> {
                                       Row(children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(color: type == 'assignment' ? Colors.blue : Colors.green, borderRadius: BorderRadius.circular(12)),
+                                          decoration: BoxDecoration(
+                                            color: _getOptionColor(type), 
+                                            borderRadius: BorderRadius.circular(12)
+                                          ),
                                           child: Text(type.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                                         ),
                                         const Spacer(),
-                                        Text('${o['estimatedTimeMinutes']} min', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                        Text('${_validateEstimatedTime(o['estimatedTimeMinutes'], o['type'])} min', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                       ]),
                                       const SizedBox(height: 8),
                                       Text(o['title'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 6),
                                       if ((o['description'] ?? '').toString().isNotEmpty) Text(o['description']),
                                       const SizedBox(height: 10),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () => _create(o),
-                                          style: ElevatedButton.styleFrom(backgroundColor: type == 'assignment' ? Colors.blue : Colors.green, foregroundColor: Colors.white),
-                                          child: Text('Create $type'),
+                                      // Only show create button for actual creatable items (not suggestions/help)
+                                      if (_isCreatableOption(o))
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            onPressed: () => _create(o),
+                                            style: ElevatedButton.styleFrom(backgroundColor: type == 'assignment' ? Colors.blue : Colors.green, foregroundColor: Colors.white),
+                                            child: Text('Create $type'),
+                                          ),
+                                        )
+                                      else
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.grey[300]!),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.info_outline, color: Colors.grey[600], size: 16),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Guidance Only',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),
@@ -120,15 +149,70 @@ class _AICreateDialogState extends ConsumerState<AICreateDialog> {
     }
   }
 
+  // Check if an option is creatable (not suggestion/help)
+  bool _isCreatableOption(Map<String, dynamic> option) {
+    final type = option['type']?.toString().toLowerCase() ?? '';
+    return type == 'assignment' || type == 'event';
+  }
+
+  // Get appropriate color for option type
+  Color _getOptionColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'assignment':
+        return Colors.blue;
+      case 'event':
+        return Colors.green;
+      case 'suggestion':
+        return Colors.orange;
+      case 'help':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Validate estimated time with 10-hour limit for assignments
+  int _validateEstimatedTime(dynamic estimatedTime, String type) {
+    final time = estimatedTime is int ? estimatedTime : int.tryParse(estimatedTime?.toString() ?? '60') ?? 60;
+    
+    // Apply 10-hour (600 minutes) limit for assignments
+    if (type.toString().toLowerCase() == 'assignment' && time > 600) {
+      return 600;
+    }
+    
+    return time;
+  }
+
   Future<void> _create(Map<String, dynamic> option) async {
     try {
-      final result = await ref.read(aiServiceProvider).createSelected(option, conversationId: _conversationId);
+      // Apply validation before creating
+      final validatedOption = Map<String, dynamic>.from(option);
+      validatedOption['estimatedTimeMinutes'] = _validateEstimatedTime(
+        option['estimatedTimeMinutes'], 
+        option['type']
+      );
+      
+      final result = await ref.read(aiServiceProvider).createSelected(validatedOption, conversationId: _conversationId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Created')));
+      
+      // Show success message with validation info if time was capped
+      String message = result['message'] ?? 'Created';
+      if (option['type'].toString().toLowerCase() == 'assignment' && 
+          (option['estimatedTimeMinutes'] ?? 0) > 600) {
+        message += ' (Time capped at 10 hours)';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Create failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Create failed: $e'),
+        backgroundColor: Colors.red,
+      ));
     }
   }
 }
