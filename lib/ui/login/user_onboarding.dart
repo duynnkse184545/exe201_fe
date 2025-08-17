@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import '../../model/user/user.dart';
 import '../../provider/user_provider.dart';
 import '../../nav_bar.dart';
 import '../extra/custom_field.dart';
@@ -19,6 +20,7 @@ class _UserOnboardingPageState extends ConsumerState<UserOnboardingPage> {
   DateTime? _selectedDate;
   File? _selectedImage;
   bool _isLoading = false;
+  bool _hasLoadedUserData = false; // Flag to prevent multiple loads
 
   @override
   void dispose() {
@@ -106,24 +108,23 @@ class _UserOnboardingPageState extends ConsumerState<UserOnboardingPage> {
     });
 
     try {
-      // Update user profile with onboarding data
+      await ref.read(userNotifierProvider.notifier).refreshUser();
       await ref.read(userNotifierProvider.notifier).updateProfile(
         fullName: _fullNameController.text.trim(),
         doB: _selectedDate, // Optional
         img: _selectedImage, // Optional
       );
-
       if (mounted) {
         // Navigate to main app
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const BottomTab()),
-          (route) => false,
+              (route) => false,
         );
       }
     } catch (e) {
       if (mounted) {
-        var showSnackBar = ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to complete setup: $e'),
             backgroundColor: Colors.red,
@@ -144,286 +145,339 @@ class _UserOnboardingPageState extends ConsumerState<UserOnboardingPage> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const BottomTab()),
-      (route) => false,
+          (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final userAsync = ref.watch(userNotifierProvider); // Watch instead of read
+
+    // Load user data when it becomes available
+    userAsync.whenData((user) {
+      if (user != null && !_hasLoadedUserData && user.fullName.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _fullNameController.text = user.fullName;
+              _selectedDate = user.doB;
+              _hasLoadedUserData = true; // Prevent multiple loads
+            });
+            print('User data loaded successfully: ${user.fullName}');
+          }
+        });
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+      body: userAsync.when(
+        data: (user) => _buildForm(user),
+        loading: () => const Center(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
-
-              // Welcome Header
-              Text(
-                'Welcome to YUni!',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: context.primaryColor,
-                ),
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading your profile...'),
+            ],
+          ),
+        ),
+        error: (error, _) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Let\'s set up your profile to get started',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
+              SizedBox(height: 16),
+              Text('Error loading profile: $error'),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.read(userNotifierProvider.notifier).refreshUser(),
+                child: const Text('Retry'),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-              const SizedBox(height: 40),
+  Widget _buildForm(User? user) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 40),
 
-              // Profile Picture Section
-              Column(
-                children: [
-                  Text(
-                    'What should we view you as?',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
+            // Welcome Header
+            Text(
+              'Welcome to YUni!',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: context.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Let\'s set up your profile to get started',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 40),
+
+            // Profile Picture Section
+            Column(
+              children: [
+                Text(
+                  'What should we view you as?',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
                   ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[200],
+                          border: Border.all(
+                            color: context.primaryColor,
+                            width: 3,
+                          ),
+                        ),
+                        child: _selectedImage != null
+                            ? ClipOval(
+                          child: Image.file(
+                            _selectedImage!,
+                            fit: BoxFit.cover,
+                            width: 120,
+                            height: 120,
+                          ),
+                        )
+                            : Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 36,
+                          height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.grey[200],
-                            border: Border.all(
-                              color: context.primaryColor,
-                              width: 3,
-                            ),
+                            color: context.primaryColor,
+                            border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: _selectedImage != null
-                              ? ClipOval(
-                                  child: Image.file(
-                                    _selectedImage!,
-                                    fit: BoxFit.cover,
-                                    width: 120,
-                                    height: 120,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.grey[400],
-                                ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: context.primaryColor,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 18,
-                            ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 18,
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Tap to upload profile picture (optional)',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 40),
+
+            // Full Name Field
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What should we call you?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                buildFormField(
+                  label: 'Full Name',
+                  controller: _fullNameController,
+                  keyboardType: TextInputType.name,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            // Date of Birth Field
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Should we know your birthday?',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '(Optional - helps us personalize your experience)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _selectDate,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF858484).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.transparent),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          color: context.primaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _selectedDate != null
+                                ? _formatDate(_selectedDate!)
+                                : 'Select your birthday (optional)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: _selectedDate != null
+                                  ? Colors.black87
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                        if (_selectedDate != null)
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedDate = null;
+                              });
+                            },
+                            child: Icon(
+                              Icons.clear,
+                              color: Colors.grey[600],
+                              size: 20,
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Tap to upload profile picture (optional)',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
 
-              const SizedBox(height: 40),
+            const SizedBox(height: 50),
 
-              // Full Name Field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'What should we call you?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  buildFormField(
-                    label: 'Full Name',
-                    controller: _fullNameController,
-                    keyboardType: TextInputType.name,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // Date of Birth Field
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Should we know your birthday?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '(Optional - helps us personalize your experience)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: _selectDate,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF858484).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.transparent),
+            // Action Buttons
+            Column(
+              children: [
+                // Complete Setup Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _completeOnboarding,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            color: context.primaryColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _selectedDate != null
-                                  ? _formatDate(_selectedDate!)
-                                  : 'Select your birthday (optional)',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: _selectedDate != null
-                                    ? Colors.black87
-                                    : Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                          if (_selectedDate != null)
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedDate = null;
-                                });
-                              },
-                              child: Icon(
-                                Icons.clear,
-                                color: Colors.grey[600],
-                                size: 20,
-                              ),
-                            ),
-                        ],
+                      elevation: 2,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                        : const Text(
+                      'Complete Setup',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
 
-              const SizedBox(height: 50),
+                const SizedBox(height: 16),
 
-              // Action Buttons
-              Column(
-                children: [
-                  // Complete Setup Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _completeOnboarding,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        elevation: 2,
+                // Skip Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _skipOnboarding,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey[600],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        side: BorderSide(color: Colors.grey[300]!),
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Complete Setup',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Skip Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: TextButton(
-                      onPressed: _isLoading ? null : _skipOnboarding,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[600],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          side: BorderSide(color: Colors.grey[300]!),
-                        ),
-                      ),
-                      child: const Text(
-                        'Skip for now',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    child: const Text(
+                      'Skip for now',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
 
-              const SizedBox(height: 20),
-            ],
-          ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
