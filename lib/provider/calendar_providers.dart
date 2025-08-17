@@ -50,7 +50,12 @@ Future<List<Assignment>> monthAssignments(Ref ref) async {
     final endDate = DateTime(selectedMonth.year, selectedMonth.month + 1, 0);
     
     // Get assignments directly from service (which now returns mock data)
-    return ref.watch(assignmentServiceProvider).getUpcomingAssignments(endDate);
+    final assignments = await ref.watch(assignmentServiceProvider).getUpcomingAssignments(endDate);
+    
+    // Convert estimatedTime from minutes (backend) to hours (frontend)
+    return assignments.map((assignment) => assignment.copyWith(
+      estimatedTime: (assignment.estimatedTime / 60).round(),
+    )).toList();
   } catch (e) {
     print('Error fetching assignments: $e');
     // Return empty list on error
@@ -81,6 +86,8 @@ Future<List<Assignment>> assignments(Ref ref) async {
       .map((a) => a.copyWith(
             subjectName: a.subjectName ?? subjMap[a.subjectId],
             priorityName: a.priorityName ?? priMap[a.priorityId],
+            // Convert estimatedTime from minutes (backend) to hours (frontend)
+            estimatedTime: (a.estimatedTime / 60).round(),
           ))
       .toList();
 }
@@ -135,6 +142,8 @@ Future<List<Assignment>> dayAssignments(Ref ref) async {
   final selectedDay = ref.watch(selectedDayProvider);
   final assignments = await ref.watch(monthAssignmentsProvider.future);
   
+  // Note: monthAssignmentsProvider already converts minutes to hours,
+  // so no additional conversion needed here
   return assignments.where((assignment) => 
     assignment.dueDate.year == selectedDay.year &&
     assignment.dueDate.month == selectedDay.month &&

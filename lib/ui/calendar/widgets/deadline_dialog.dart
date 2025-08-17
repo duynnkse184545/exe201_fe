@@ -93,6 +93,7 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
     
     // Set form fields with existing assignment data
     _nameController.text = assignment.title;
+    // Convert from hours (frontend) to display in the UI
     _estimatedTimeController.text = assignment.estimatedTime.toString();
     
     _selectedDateTime = assignment.dueDate;
@@ -213,7 +214,7 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
         description: 'Created via deadline dialog',
         dueDate: selectedDateTime,
         priorityId: priorities.first.priorityId!,
-        estimatedTime: estimatedHours,
+        estimatedTime: estimatedHours! * 60, // Convert hours to minutes for backend
       );
 
       // Create assignment using the correct service method
@@ -281,7 +282,7 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
         description: widget.existingAssignment!.description,
         dueDate: _selectedDateTime!,
         priorityId: widget.existingAssignment!.priorityId,
-        estimatedTime: estimatedHours ?? widget.existingAssignment!.estimatedTime,
+        estimatedTime: estimatedHours != null ? estimatedHours * 60 : widget.existingAssignment!.estimatedTime * 60, // Convert hours to minutes for backend
         status: widget.existingAssignment!.status,
         subjectId: null,
         userId: '',

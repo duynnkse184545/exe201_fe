@@ -107,7 +107,7 @@ class _TimerPageState extends ConsumerState<TimerPage> {
         _remainingSeconds = widget.breakMinutes * 60;
         
         // Check if we've completed enough focus time for the assignment
-        final estimatedMinutes = widget.assignment.estimatedTime * 60;
+        final estimatedMinutes = widget.assignment.estimatedTime * 60; // estimatedTime is now in hours from provider
         if (_totalFocusMinutesCompleted >= estimatedMinutes) {
           _isAssignmentCompleted = true;
         }
@@ -143,7 +143,7 @@ class _TimerPageState extends ConsumerState<TimerPage> {
             const SizedBox(height: 12),
             // Show progress
             Text(
-              'Progress: ${_totalFocusMinutesCompleted}/${widget.assignment.estimatedTime * 60} minutes',
+              'Progress: ${_totalFocusMinutesCompleted}/${widget.assignment.estimatedTime * 60} minutes', // estimatedTime is now in hours from provider
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -151,7 +151,7 @@ class _TimerPageState extends ConsumerState<TimerPage> {
             ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
-              value: _totalFocusMinutesCompleted / (widget.assignment.estimatedTime * 60),
+              value: _totalFocusMinutesCompleted / (widget.assignment.estimatedTime * 60), // estimatedTime is now in hours from provider
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
             ),
@@ -505,7 +505,7 @@ class _TimerPageState extends ConsumerState<TimerPage> {
 
   // Calculate total number of focus sessions needed based on estimated time
   int _getTotalSessionsNeeded() {
-    final estimatedMinutes = widget.assignment.estimatedTime * 60;
+    final estimatedMinutes = widget.assignment.estimatedTime * 60; // estimatedTime is now in hours from provider
     final sessionsNeeded = (estimatedMinutes / widget.focusMinutes).ceil();
     // Cap at reasonable maximum for UI purposes
     return sessionsNeeded.clamp(1, 8);
