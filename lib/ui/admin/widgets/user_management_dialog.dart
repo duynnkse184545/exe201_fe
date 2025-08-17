@@ -391,7 +391,7 @@ class _UserManagementDialogState extends ConsumerState<UserManagementDialog> {
                     ),
                     const SizedBox(height: 16),
 
-                    if(!widget.isCreate)
+                    if(widget.isCreate)
                     buildFormField(
                       label: 'Email',
                       controller: _emailController,

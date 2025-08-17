@@ -10,21 +10,29 @@ import '../../../provider/service_providers.dart';
 import '../../../provider/calendar_providers.dart';
 
 class EventDialog extends StatefulWidget {
-  const EventDialog({super.key});
+  final Event? existingEvent;
+  
+  const EventDialog({super.key, this.existingEvent});
 
   @override
   State<EventDialog> createState() => _EventDialogState();
 
-  static void show(BuildContext context) {
+  static void show(BuildContext context, {Event? existingEvent}) {
     final dialogKey = GlobalKey<_EventDialogState>();
+    final isEditing = existingEvent != null;
+    
     showCustomBottomSheet(
       context: context,
-      title: 'Add Event',
-      actionText: 'CREATE',
+      title: isEditing ? 'Edit Event' : 'Add Event',
+      actionText: isEditing ? 'UPDATE' : 'CREATE',
       actionColor: const Color(0xFF6366F1),
-      content: EventDialog(key: dialogKey),
+      content: EventDialog(key: dialogKey, existingEvent: existingEvent),
       onActionPressed: () async {
-        await dialogKey.currentState?._createEvent();
+        if (isEditing) {
+          await dialogKey.currentState?._updateEvent();
+        } else {
+          await dialogKey.currentState?._createEvent();
+        }
       },
     );
   }
@@ -53,7 +61,11 @@ class _EventDialogState extends State<EventDialog> {
   @override
   void initState() {
     super.initState();
-    _initializeDateTimes();
+    if (widget.existingEvent != null) {
+      _initializeWithExistingEvent();
+    } else {
+      _initializeDateTimes();
+    }
   }
 
   @override
@@ -102,6 +114,29 @@ class _EventDialogState extends State<EventDialog> {
     _repeatEndDateController.clear();
     _selectedRepeatEndDate = null;
     _selectedRepeatPattern = 'none';
+  }
+
+  void _initializeWithExistingEvent() {
+    final event = widget.existingEvent!;
+    
+    // Set form fields with existing event data
+    _titleController.text = event.title;
+    _descriptionController.text = event.description ?? '';
+    
+    _selectedStartDateTime = event.startDateTime;
+    _selectedEndDateTime = event.endDateTime;
+    
+    _startDateController.text = _formatDate(event.startDateTime);
+    _startTimeController.text = _formatTime(event.startDateTime);
+    _endDateController.text = _formatDate(event.endDateTime);
+    _endTimeController.text = _formatTime(event.endDateTime);
+    
+    // Handle recurrence
+    _selectedRepeatPattern = event.recurrencePattern ?? 'none';
+    if (event.recurrenceEndDate != null) {
+      _selectedRepeatEndDate = event.recurrenceEndDate;
+      _repeatEndDateController.text = _formatDate(event.recurrenceEndDate!);
+    }
   }
 
   @override
@@ -269,6 +304,77 @@ class _EventDialogState extends State<EventDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
+    }
+  }
+
+  Future<void> _updateEvent() async {
+    try {
+      // Clear previous errors
+      setState(() {
+        _titleError = null;
+        _dateTimeError = null;
+        _descriptionError = null;
+      });
+
+      bool valid = true;
+
+      // Validate inputs
+      if (_titleController.text.trim().isEmpty) {
+        setState(() => _titleError = 'Please enter an event title');
+        valid = false;
+      }
+
+      // Parse the selected date and times
+      final startDateTime = _parseDateTime(
+        _startDateController.text,
+        _startTimeController.text,
+        true,
+      );
+      final endDateTime = _parseDateTime(
+        _endDateController.text,
+        _endTimeController.text,
+        false,
+      );
+
+      // Validate that end time is after start time
+      if (endDateTime.isBefore(startDateTime)) {
+        setState(() => _dateTimeError = 'End time must be after start time');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      final eventRequest = Event(
+        eventId: widget.existingEvent!.eventId,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        startDateTime: startDateTime,
+        endDateTime: endDateTime,
+        recurrencePattern: _selectedRepeatPattern == 'none'
+            ? widget.existingEvent!.recurrencePattern
+            : _selectedRepeatPattern,
+        recurrenceEndDate: _selectedRepeatEndDate,
+        userId: '',
+      );
+      final eventService = ProviderScope.containerOf(context).read(eventServiceProvider);
+      await eventService.update(eventRequest);
+
+      // Refresh the calendar data
+      ProviderScope.containerOf(context).refresh(monthEventsProvider);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Event updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      _showError('Failed to update event: $e');
     }
   }
 

@@ -28,8 +28,10 @@ abstract class Assignment with _$Assignment {
 @freezed
 abstract class AssignmentRequest with _$AssignmentRequest {
   const factory AssignmentRequest({
+    String? assignmentId,
     required String title,
     String? description,
+    String? status,
     required DateTime dueDate,
     required int priorityId,
     required int? estimatedTime,
