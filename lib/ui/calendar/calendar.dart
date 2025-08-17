@@ -7,6 +7,7 @@ import '../extra/speed_dial_menu.dart';
 import '../../model/models.dart';
 import '../../provider/calendar_providers.dart';
 import 'calendar_theme.dart';
+import 'widgets/day_details_dialog.dart';
 
 class CalendarTab extends ConsumerStatefulWidget {
   const CalendarTab({super.key});
@@ -213,6 +214,23 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                             });
                             // Update the selected day provider
                             ref.read(selectedDayProvider.notifier).setDay(selectedDay);
+                            
+                            // Get events and assignments for the selected day
+                            final normalizedDay = DateTime(
+                              selectedDay.year,
+                              selectedDay.month,
+                              selectedDay.day,
+                            );
+                            final dayEvents = eventsByDay[normalizedDay] ?? [];
+                            final dayAssignments = assignmentsByDay[normalizedDay] ?? [];
+                            
+                            // Show day details dialog
+                            DayDetailsDialog.show(
+                              context,
+                              selectedDay,
+                              dayEvents,
+                              dayAssignments,
+                            );
                           },
                           onPageChanged: (focusedDay) {
                             // Called when user swipes to a different month

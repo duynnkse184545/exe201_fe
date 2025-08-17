@@ -11,7 +11,7 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://exe202.runasp.net/',
+        baseUrl: 'https://c6f94677f02a.ngrok-free.app/',
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},

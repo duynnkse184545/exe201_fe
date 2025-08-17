@@ -66,10 +66,10 @@ class UserTab extends ConsumerWidget {
                             child: user?.img != null && user!.img!.isNotEmpty
                                 ? buildImageWidget(context, user!.img, size: 60)
                                 : Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 30,
-                                  ),
+                              Icons.person,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
                           // Small pen icon at bottom right
                           Positioned(
@@ -276,17 +276,21 @@ class UserTab extends ConsumerWidget {
 
             SizedBox(height: 25),
 
-            // Menu Items - Hide Premium for Admin users
+            // Menu Items - Hide Premium for Admin users and users who already have premium
             Consumer(
               builder: (context, ref, child) {
                 final userAsync = ref.watch(userNotifierProvider);
+                final hasPaidInvoice = ref.watch(hasUserInvoiceProvider);
+
                 return userAsync.when(
                   data: (user) {
                     final isAdmin = user?.roleId == 1;
+                    final shouldShowPremium = !isAdmin && !hasPaidInvoice;
+
                     return Column(
                       children: [
-                        // Only show Get Premium for non-admin users
-                        if (!isAdmin) ...[
+                        // Only show Get Premium for non-admin users who haven't paid
+                        if (shouldShowPremium) ...[
                           _buildMenuItem(
                             icon: Icons.star,
                             iconColor: Color(0xFF7B68EE),
@@ -447,12 +451,12 @@ class UserTab extends ConsumerWidget {
                 try {
                   // Sign out from Google Sign-In first
                   await GoogleSignInService.signOut();
-                  
+
                   // Clear local token storage
                   await TokenStorage().clearToken();
-                  
+
                   if (!context.mounted) return;
-                  
+
                   // Navigate to login page
                   Navigator.pushAndRemoveUntil(
                     context,
@@ -467,14 +471,14 @@ class UserTab extends ConsumerWidget {
                 } catch (e) {
                   // Even if Google Sign-In logout fails, still clear local storage
                   await TokenStorage().clearToken();
-                  
+
                   if (!context.mounted) return;
-                  
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (_) => LoginPage()),
                   );
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Logged out (with some issues)')),
                   );
@@ -594,7 +598,7 @@ class UserTab extends ConsumerWidget {
   Future<void> _launchInstagramPage() async {
     const String instagramUrl = 'https://www.instagram.com/yunibuddy/?fbclid=IwY2xjawMJWjhleHRuA2FlbQIxMABicmlkETFVb2VsRThqbHRpMjhoeTYwAR5z_YYIRDpk4mhyKIus4M6w8O4W337cuGngxcL94BhuihEKOYSZk93TmMIrjQ_aem_BYEVr4dmsqkFl-VqsZmnsQ'; // Replace with your Instagram page URL
     final Uri url = Uri.parse(instagramUrl);
-    
+
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);

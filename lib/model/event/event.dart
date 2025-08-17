@@ -28,6 +28,7 @@ abstract class Event with _$Event {
 @freezed
 abstract class EventRequest with _$EventRequest {
   const factory EventRequest({
+    String? eventId,
     required String title,
     String? description,
     required DateTime startDateTime,

@@ -94,11 +94,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
                           // Chart and Calendar Slider Section
                           const ChartCalendarSlider(),
-                          SizedBox(height: 24),
-
-                          // Gaming Card
-                          _buildGamingCard(),
-                          SizedBox(height: 100), // Space for bottom navigation
+                          SizedBox(height: 100),
                         ],
                       ),
                     ),

@@ -11,22 +11,29 @@ import '../../../provider/calendar_providers.dart';
 import '../../../service/api/base/id_generator.dart';
 
 class DeadlineDialog extends StatefulWidget {
-  const DeadlineDialog({super.key});
+  final Assignment? existingAssignment;
+  
+  const DeadlineDialog({super.key, this.existingAssignment});
 
   @override
   State<DeadlineDialog> createState() => _DeadlineDialogState();
 
-  static void show(BuildContext context) {
+  static void show(BuildContext context, {Assignment? existingAssignment}) {
     final dialogKey = GlobalKey<_DeadlineDialogState>();
+    final isEditing = existingAssignment != null;
 
     showCustomBottomSheet(
       context: context,
-      title: 'Add Deadline',
-      actionText: 'CREATE',
+      title: isEditing ? 'Edit Assignment' : 'Add Deadline',
+      actionText: isEditing ? 'UPDATE' : 'CREATE',
       actionColor: const Color(0xFF6366F1),
-      content: DeadlineDialog(key: dialogKey),
+      content: DeadlineDialog(key: dialogKey, existingAssignment: existingAssignment),
       onActionPressed: () async {
-        await dialogKey.currentState?._createDeadline();
+        if (isEditing) {
+          await dialogKey.currentState?._updateAssignment();
+        } else {
+          await dialogKey.currentState?._createDeadline();
+        }
       },
     );
   }
@@ -47,7 +54,11 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
   @override
   void initState() {
     super.initState();
-    _initializeDateTime();
+    if (widget.existingAssignment != null) {
+      _initializeWithExistingAssignment();
+    } else {
+      _initializeDateTime();
+    }
   }
 
   @override
@@ -75,6 +86,18 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
     // Clear other fields
     _nameController.clear();
     _estimatedTimeController.clear();
+  }
+
+  void _initializeWithExistingAssignment() {
+    final assignment = widget.existingAssignment!;
+    
+    // Set form fields with existing assignment data
+    _nameController.text = assignment.title;
+    _estimatedTimeController.text = assignment.estimatedTime.toString();
+    
+    _selectedDateTime = assignment.dueDate;
+    _dateController.text = _formatDate(assignment.dueDate);
+    _timeController.text = _formatTime(assignment.dueDate);
   }
 
 
@@ -221,6 +244,66 @@ class _DeadlineDialogState extends State<DeadlineDialog> {
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  Future<void> _updateAssignment() async {
+    try {
+      // Clear previous errors
+      setState(() {
+        _nameError = null;
+        _estimatedTimeError = null;
+        _generalError = null;
+      });
+
+      bool valid = true;
+
+      // Validate inputs
+      if (_nameController.text.trim().isEmpty) {
+        setState(() => _nameError = 'Please enter an assignment title');
+        valid = false;
+      }
+
+      // Parse estimated time
+      int? estimatedHours;
+      if (_estimatedTimeController.text.trim().isNotEmpty) {
+        estimatedHours = int.tryParse(_estimatedTimeController.text.trim());
+        if (estimatedHours == null || estimatedHours < 1 || estimatedHours > 10) {
+          setState(() => _estimatedTimeError = 'Please enter a valid estimated time between 1 and 10 hours');
+          valid = false;
+        }
+      }
+
+      if (!valid) return;
+
+      final assignmentRequest = Assignment(
+        assignmentId: widget.existingAssignment!.assignmentId,
+        title: _nameController.text.trim(),
+        description: widget.existingAssignment!.description,
+        dueDate: _selectedDateTime!,
+        priorityId: widget.existingAssignment!.priorityId,
+        estimatedTime: estimatedHours ?? widget.existingAssignment!.estimatedTime,
+        status: widget.existingAssignment!.status,
+        subjectId: null,
+        userId: '',
+      );
+      final assignmentService = ProviderScope.containerOf(context).read(assignmentServiceProvider);
+      await assignmentService.update(assignmentRequest);
+
+      // Refresh the calendar data
+      ProviderScope.containerOf(context).refresh(monthAssignmentsProvider);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Assignment updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      _showError('Failed to update assignment: $e');
+    }
   }
 
   DateTime _parseDateTime(String dateText, String timeText) {
